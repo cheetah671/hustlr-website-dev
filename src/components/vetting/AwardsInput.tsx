@@ -42,7 +42,7 @@ export function AwardsInput({ form, email, jwtToken }: { form: FormFieldProp; em
   const awards = form.watch("awards") || [];
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  
+
   const [awardForm, setAwardForm] = useState<AwardFormData>({
     title: "",
     category: "",
@@ -76,7 +76,7 @@ export function AwardsInput({ form, email, jwtToken }: { form: FormFieldProp; em
 
   const saveAward = () => {
     const currentAwards = (form.getValues("awards") || []) as AwardFormData[];
-    
+
     if (editingIndex !== null) {
       const updated = [...currentAwards];
       updated[editingIndex] = awardForm;
@@ -84,7 +84,7 @@ export function AwardsInput({ form, email, jwtToken }: { form: FormFieldProp; em
     } else {
       form.setValue("awards", [...currentAwards, awardForm] as any);
     }
-    
+
     form.trigger("awards");
     setIsDialogOpen(false);
     resetForm();
@@ -118,11 +118,11 @@ export function AwardsInput({ form, email, jwtToken }: { form: FormFieldProp; em
                   Add Award
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto font-ovo">
                 <DialogHeader>
                   <DialogTitle>{editingIndex !== null ? "Edit Award" : "Add New Award"}</DialogTitle>
                 </DialogHeader>
-                
+
                 <div className="space-y-4 py-4">
                   {/* Title */}
                   <div>

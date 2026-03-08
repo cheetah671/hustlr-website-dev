@@ -460,10 +460,6 @@ export function OpenSourceInput({ form }: { form: FormFieldProp }) {
                       key={index}
                       className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
-                      {entry.projectName && (
-                        <h2 className="font-bold text-lg text-gray-900 mb-1 truncate">{entry.projectName}</h2>
-                      )}
-
                       {/* Header Row */}
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
@@ -508,6 +504,10 @@ export function OpenSourceInput({ form }: { form: FormFieldProp }) {
                           </Button>
                         </div>
                       </div>
+
+                      {entry.projectName && (
+                        <h2 className="font-bold text-lg text-gray-900 mb-1 truncate">{entry.projectName}</h2>
+                      )}
 
                       <p className="text-sm text-gray-600 mb-3 whitespace-pre-wrap break-words">
                         {entry.impactDescription}

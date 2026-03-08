@@ -28,8 +28,8 @@ export const formSchema = z.object({
   branch: z.string().min(1, "Branch is required"),
   year: z.string().min(1, "Year is required"),
   cgpa: z
-  .string()
-  .refine((val) => /^\d+\.\d+$/.test(val), {
+    .string()
+    .refine((val) => /^\d+\.\d+$/.test(val), {
       message: "CGPA must include a decimal point (e.g., 8.25)",
     })
     .refine(
@@ -42,8 +42,14 @@ export const formSchema = z.object({
       }
     ),
 
-  linkedin: z.string().optional(),
-  github: z.string().optional(),
+  linkedin: z
+    .string()
+    .optional()
+    .refine((val) => !val || (val.startsWith("https://") && val.includes("linkedin.com/in/")), "Must be a valid LinkedIn profile link (e.g., https://linkedin.com/in/username)"),
+  github: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.startsWith("https://github.com/"), "Must be a valid GitHub profile link (e.g., https://github.com/username)"),
   awards: z.array(z.object({
     title: z.string().min(1, "Award title is required"),
     category: z.enum(["Scholarship", "Hackathon", "Competitive programming", "Academic award", "Open source"], {

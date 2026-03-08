@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,10 +21,14 @@ export function LinksInput({ form }: { form: FormFieldProp }) {
             <FormLabel className="text-black">LinkedIn</FormLabel>
             <FormControl>
               <Input
-                className=" border border-black/25 p-2 w-full mb-4 font-sans shadow-black/30 text-black"
+                placeholder="https://linkedin.com/in/username"
+                className=" border border-black/25 p-2 w-full text-black shadow-black/30"
                 {...field}
               />
             </FormControl>
+            <FormDescription className="mb-4">
+              Enter your full LinkedIn profile URL.
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -38,10 +43,14 @@ export function LinksInput({ form }: { form: FormFieldProp }) {
             </FormLabel>
             <FormControl>
               <Input
-                className=" border border-black/25 p-2 w-full mb-4 font-sans shadow-black/30 text-black"
+                placeholder="https://github.com/username"
+                className=" border border-black/25 p-2 w-full text-black shadow-black/30"
                 {...field}
               />
             </FormControl>
+            <FormDescription className="mb-4">
+              Enter your full GitHub profile or portfolio URL.
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}

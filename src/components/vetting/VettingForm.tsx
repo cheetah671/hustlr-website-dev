@@ -20,10 +20,10 @@ import {
 } from "../../lib/schemas/formSchema";
 import { CollegeInput } from "./CollegeInput";
 import DobInput from "./DobInput";
-import PhoneInput from "./PhoneInput"; 
-import { DegreeInput } from "./DegreeInput"; 
-import { BranchInput } from "./BranchInput"; 
-import { CollegeEmailInput } from "./CollegeEmailInput"; 
+import PhoneInput from "./PhoneInput";
+import { DegreeInput } from "./DegreeInput";
+import { BranchInput } from "./BranchInput";
+import { CollegeEmailInput } from "./CollegeEmailInput";
 import { CgpaInput } from "./CgpaInput";
 import { NameInput } from "./NameInput";
 import { EmailInput } from "./EmailInput";
@@ -51,8 +51,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 const steps = [
-  { 
-    name: "Category Selection", 
+  {
+    name: "Category Selection",
     desc: "What do you do best? Your choice decides the type of projects you will be shown on Hustlr. You can only choose ONE category",
   },
   {
@@ -188,10 +188,10 @@ export default function VettingForm({
       category: initialData?.category || "",
       name: initialData?.name || "",
       email: initialData?.email || email,
-      phone: initialData?.phone || "",            
-      collegeEmail: initialData?.collegeEmail || "", 
-      degree: initialData?.degree || "",          
-      branch: initialData?.branch || "",           
+      phone: initialData?.phone || "",
+      collegeEmail: initialData?.collegeEmail || "",
+      degree: initialData?.degree || "",
+      branch: initialData?.branch || "",
       college: initialData?.college || "",
       year: initialData?.year || "",
       linkedin: initialData?.linkedin || "",
@@ -202,7 +202,7 @@ export default function VettingForm({
         initialData?.cgpa !== undefined && initialData?.cgpa !== null
           ? String(Number(initialData.cgpa).toFixed(2))
           : "",
-      skills: (initialData?.skills || []) as { skill: string; proficiency: "Beginner" | "Intermediate" | "Advanced" | "Expert"}[],
+      skills: (initialData?.skills || []) as { skill: string; proficiency: "Beginner" | "Intermediate" | "Advanced" | "Expert" }[],
       projects: (initialData?.projects || []) as any[],
       experiences: (initialData?.experiences || []) as any[],
       hackathons: (initialData?.hackathons || []) as any[],
@@ -304,12 +304,8 @@ export default function VettingForm({
 
       const data = await res.json();
       if (res.ok) {
-        setSuccess(true);
         console.log("Vetting data saved successfully");
-
-        setTimeout(() => {
-          router.push("/get-started/student/application/status");
-        }, 1000);
+        router.push("/get-started/student/application/status");
       } else {
         toast.error("Failed to submit vetting data.");
         console.log("error saving vetting data:", data);
@@ -349,8 +345,8 @@ export default function VettingForm({
               exit="exit"
               className="flex flex-col gap-5"
             >
-              <NameInput form={form} /> 
-              <EmailInput form={form} /> 
+              <NameInput form={form} />
+              <EmailInput form={form} />
               <DobInput form={form} />
               <PhoneInput form={form} />
               <CollegeInput form={form} />
@@ -358,7 +354,7 @@ export default function VettingForm({
               <DegreeInput form={form} />
               <BranchInput form={form} />
               <CollegeYearInput form={form} />
-              <CgpaInput form={form} />              
+              <CgpaInput form={form} />
               <UploadFileInput
                 title="Resume"
                 form={form}
@@ -514,25 +510,19 @@ export default function VettingForm({
               {/* Next */}
             </Button>
           ) : (
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsReviewOpen(true)}
-              >
-                Review
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "Submitting..." : "Submit"}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              onClick={() => setIsReviewOpen(true)}
+            >
+              Review Application
+            </Button>
           )}
         </div>
       </form>
 
       {/* Review Modal */}
       <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="max-w-3xl w-full">
+        <DialogContent className="max-w-5xl w-full">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold">Review Your Application</DialogTitle>
             <DialogDescription className="text-sm text-gray-500">

@@ -54,7 +54,7 @@ export default function CategoryRadio({ form }: { form: FormFieldProp }) {
                 return (
                   <FormItem key={value} className="w-full md:w-[30%]">
                     <FormLabel htmlFor={value} className="cursor-pointer h-full block">
-                      <div className="flex flex-col items-center justify-center p-8 bg-accentBlue rounded-2xl hover:bg-opacity-90 transition-colors [&:has(:checked)]:ring-2 [&:has(:checked)]:ring-black [&:has(:checked)]:ring-offset-2 h-full text-center">
+                      <div className={`flex flex-col items-center justify-center p-8 bg-accentBlue rounded-2xl hover:bg-opacity-90 transition-colors h-full text-center ${field.value === value ? "border-2 border-black" : "border-2 border-transparent"}`}>
                         <RadioGroupItem
                           value={value}
                           id={value}

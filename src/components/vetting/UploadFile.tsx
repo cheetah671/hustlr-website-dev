@@ -151,6 +151,7 @@ export default function UploadFileInput({
     try {
       const res = await fetch(`/api/file/upload?field=${name}`, {
         method: "POST",
+        headers: { Authorization: `Bearer ${jwtToken}` },
         body: formData,
       });
 
@@ -184,6 +185,7 @@ export default function UploadFileInput({
     try {
       const res = await fetch(`/api/file/delete?field=${name}&email=${email}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${jwtToken}` },
       });
 
       const result = await res.json();

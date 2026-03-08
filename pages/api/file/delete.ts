@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabaseAdmin } from "@/src/lib/supabase-admin";
+import { extractEmailFromAuthHeader } from "@/src/lib/vettingUtils";
 
 export default async function handler(
   req: NextApiRequest,
@@ -9,12 +10,23 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  // Verify JWT from Authorization header
+  const jwtEmail = extractEmailFromAuthHeader(req);
+  if (!jwtEmail) {
+    return res.status(401).json({ error: "Invalid or missing token" });
+  }
+
   const field = req.query.field as string;
   const email = req.query.email as string;
 
   const validFields = ["studentId", "resume", "transcript"];
   if (!field || !email || !validFields.includes(field)) {
     return res.status(400).json({ error: "Invalid request" });
+  }
+
+  // Ensure the email in query matches the JWT
+  if (jwtEmail !== email) {
+    return res.status(403).json({ error: "Not authorized to delete files for this user" });
   }
 
   const column = `${field}`;

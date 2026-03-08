@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import formidable from "formidable";
 import { supabaseAdmin } from "@/src/lib/supabase-admin";
+import { extractEmailFromAuthHeader } from "@/src/lib/vettingUtils";
 
 // Disable default body parsing (important for file uploads)
 export const config = {
@@ -32,15 +33,26 @@ export default async function handler(
     return res.status(400).json({ error: "Missing or invalid ?field param" });
   }
 
+  // Verify JWT from Authorization header
+  const jwtEmail = extractEmailFromAuthHeader(req);
+  if (!jwtEmail) {
+    return res.status(401).json({ error: "Invalid or missing token" });
+  }
+
   try {
     const { fields, files } = await parseForm(req);
 
     const file = files.file?.[0];
     const email = fields.email?.[0];
-    console.log(email);
     if (!file || !email) {
       return res.status(400).json({ error: "Missing file or email" });
     }
+
+    // Ensure the email in FormData matches the JWT
+    if (jwtEmail !== email) {
+      return res.status(403).json({ error: "Email mismatch: not authorized to upload for this user" });
+    }
+
     const safeEmail = email.replace(/[^\w@.-]/g, "_");
     const ext = path.extname(file.originalFilename || "").toLowerCase();
     const allowedExts = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];

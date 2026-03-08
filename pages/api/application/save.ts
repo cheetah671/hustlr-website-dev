@@ -49,10 +49,20 @@ export default async function handler(
       return res.status(200).json({ success: true, final: true });
     }
 
+    // For partial saves: explicitly set status and currentStage so users can
+    // continue filling the form after logout/login. Without this, DB defaults
+    // or stale values can show "application submitted" instead of the form.
+    const partialData = {
+      ...data,
+      status: "not_completed" as const,
+      currentStage: 1,
+      isComplete: false,
+    };
+
     if (existing) {
-      await updateVettingData(data);
+      await updateVettingData(partialData);
     } else {
-      await insertVettingData(data);
+      await insertVettingData(partialData);
     }
 
     return res.status(200).json({ success: true, final: false });

@@ -759,9 +759,9 @@ export default function AdminPanel({
   };
 
   return (
-    <main className="min-h-screen bg-[#d7d7d7] p-2 font-sans sm:p-4">
-      <div className="mx-auto w-full max-w-[1320px] overflow-hidden border border-[#cbcbcb] bg-[#efefef] shadow-sm">
-        <div className="grid min-h-[calc(100vh-1rem)] lg:min-h-[760px] lg:grid-cols-[250px_1fr]">
+    <main className="min-h-screen bg-[#d7d7d7] font-sans">
+      <div className="w-full bg-[#efefef]">
+        <div className="grid min-h-screen lg:grid-cols-[250px_1fr]">
           <aside className="border-b border-[#d8d8d8] bg-[#f2f2f2] lg:border-b-0 lg:border-r">
             <div className="flex h-full flex-col justify-between p-4 sm:p-5">
               <div>

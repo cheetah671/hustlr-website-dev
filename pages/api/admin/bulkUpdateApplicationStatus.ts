@@ -115,19 +115,17 @@ export default async function handler(
 
     const extendedPayload: Record<string, unknown> = {
       ...baseUpdatePayload,
-      decisionStatus: normalizedDecisionStatus,
-      decisionSource: "admin_override",
-      algorithmDecision: normalizedDecisionStatus,
       current_stage: isReject ? "resume_screening" : "test_project",
       stage_status: normalizedDecisionStatus === "accepted" ? "accepted" : "rejected",
       decision_status: normalizedDecisionStatus,
       decision_source: "admin_override",
+      algorithm_decision: normalizedDecisionStatus,
       resume_decision: normalizedDecisionStatus,
-      decisionUpdatedAt: new Date().toISOString(),
+      decision_updated_at: new Date().toISOString(),
     };
 
     if (payload?.email) {
-      extendedPayload.decisionUpdatedBy = payload.email;
+      extendedPayload.decision_updated_by = payload.email;
     }
 
     return supabaseAdmin

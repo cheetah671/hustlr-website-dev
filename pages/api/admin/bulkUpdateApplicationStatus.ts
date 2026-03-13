@@ -2,7 +2,9 @@ import { supabaseAdmin } from "@/src/lib/supabase-admin";
 import { NextApiRequest, NextApiResponse } from "next";
 import { verifyToken } from "@/src/lib/jwt";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.toLowerCase();
+const ADMIN_EMAIL = (
+  process.env.ADMIN_EMAIL || "admin@hustlr.local"
+).toLowerCase();
 
 type BulkDecisionStatus = "accepted" | "rejected";
 
@@ -19,10 +21,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (!ADMIN_EMAIL) {
-    return res.status(500).json({ success: false, error: "ADMIN_EMAIL is not configured" });
-  }
-
   if (req.method !== "POST") {
     return res
       .status(405)

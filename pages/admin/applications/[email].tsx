@@ -15,8 +15,10 @@ import { GetServerSideProps } from "next";
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const emailId = context.params?.email;
   const adminJwtToken = context.req.cookies.session;
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  if (!adminJwtToken || !adminEmail) {
+  const adminEmail = (
+    process.env.ADMIN_EMAIL || "admin@hustlr.local"
+  ).toLowerCase();
+  if (!adminJwtToken) {
     return {
       redirect: {
         destination: "/admin/login",

@@ -8,7 +8,7 @@ import Nav from "@/src/components/Nav";
 import { getVettingProgress } from "@/src/lib/vettingUtils";
 import TimelineDots from "@/src/components/Timeline";
 import { GetVettingProgressResponse } from "@/src/lib/schemas/formSchema";
-import { ArrowLeft, ArrowRight, UserX } from "lucide-react";
+import { ArrowLeft, ArrowRight, LogOut } from "lucide-react";
 import { useRouter } from "next/router";
 import VettingDataDisplay from "@/src/components/vetting/VettingDetails";
 import Link from "next/link";
@@ -117,6 +117,11 @@ export default function Vetting({
 
   const router = useRouter();
 
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/get-started/");
+  };
+
   return (
     <div className=" bg-white min-h-screen h-full text-black p-6 ">
       <Nav />
@@ -206,15 +211,41 @@ export default function Vetting({
                 </div>
               </>
             ) : (
-              <VettingForm
-                step={step}
-                setStep={setStep}
-                email={email}
-                jwtToken={token}
-                vettingProgressResponse={vettingProgressResponse}
-                setSuccess={setSuccess}
-                router={router}
-              />
+              <>
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                  <Link
+                    href="/get-started/student/application"
+                    className="inline-flex items-center justify-center gap-2 rounded border border-gray-700/40 bg-white px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-gray-100"
+                  >
+                    <ArrowLeft className="size-4" />
+                    Back to Applications
+                  </Link>
+                  <Link
+                    href="/get-started/student/application/status"
+                    className="inline-flex items-center justify-center gap-2 rounded border border-green-900/20 bg-green-500/20 px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-green-600/30"
+                  >
+                    Check application status
+                    <ArrowRight className="size-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="inline-flex items-center justify-center gap-2 rounded border border-red-900/20 bg-red-500/10 px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-red-600/20"
+                  >
+                    <LogOut className="size-4" />
+                    Sign Out
+                  </button>
+                </div>
+                <VettingForm
+                  step={step}
+                  setStep={setStep}
+                  email={email}
+                  jwtToken={token}
+                  vettingProgressResponse={vettingProgressResponse}
+                  setSuccess={setSuccess}
+                  router={router}
+                />
+              </>
             )}
 
             <p className="font-sans text-sm font-medium text-gray-500 mt-4">

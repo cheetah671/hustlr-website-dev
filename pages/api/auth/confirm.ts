@@ -9,6 +9,15 @@ function stringOrFirstString(item: string | string[] | undefined) {
   return Array.isArray(item) ? item[0] : item;
 }
 
+function sanitizeRedirectPath(path: string | undefined, fallback: string): string {
+  if (!path) return fallback;
+  // Block absolute URLs, protocol-relative URLs, and data: URLs
+  if (path.startsWith("//") || path.includes(":") || !path.startsWith("/")) {
+    return fallback;
+  }
+  return path;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -21,7 +30,7 @@ export default async function handler(
   const queryParams = req.query;
   const token_hash = stringOrFirstString(queryParams.token_hash);
   const type = stringOrFirstString(queryParams.type);
-  let next = stringOrFirstString(queryParams.next) || "/error";
+  let next = sanitizeRedirectPath(stringOrFirstString(queryParams.next), "/error");
 
   if (token_hash && type) {
     const supabase = createClient(req, res);
@@ -61,7 +70,7 @@ export default async function handler(
       })
     );
 
-    next = stringOrFirstString(queryParams.next) || "/";
+    next = sanitizeRedirectPath(stringOrFirstString(queryParams.next), "/");
   }
 
   return res.redirect(next);

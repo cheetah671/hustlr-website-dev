@@ -11,10 +11,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     try {
       const payload = verifyToken(token);
-      res.status(200).json({ user: payload });
-      console.log("/api/me, jwt payload:", payload);
+      return res.status(200).json({ user: payload });
     } catch {
-      res.status(401).json({ error: "Invalid token" });
+      return res.status(401).json({ error: "Invalid token" });
     }
   }
   return res.status(403).json({ ok: false, message: "FORBIDDEN" });

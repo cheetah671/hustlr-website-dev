@@ -286,9 +286,16 @@ function formatPercent(value: number): string {
 export async function getServerSideProps(context: any) {
   const { req } = context;
   const token = req.cookies?.session;
-  const adminEmail = (
-    process.env.ADMIN_EMAIL || "admin@hustlr.local"
-  ).toLowerCase();
+  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+
+  if (!adminEmail) {
+    return {
+      redirect: {
+        destination: "/admin/login",
+        permanent: false,
+      },
+    };
+  }
 
   if (!token) {
     return {

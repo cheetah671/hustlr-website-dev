@@ -53,13 +53,18 @@ export default async function handler(
     const projDeadline = new Date(userData.data.projectDeadline);
     const isWithinTime = projDeadline.getTime() - Date.now() > 0;
 
-    if (isWithinTime) {
-      await updateVettingData({
-        ...data,
-        status: "round_2_under_review",
-        email: jwtEmail,
+    if (!isWithinTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Submission deadline has passed",
       });
     }
+
+    await updateVettingData({
+      ...data,
+      status: "round_2_under_review",
+      email: jwtEmail,
+    });
 
     return res.status(200).json({ success: true, final: false });
   } catch (error) {

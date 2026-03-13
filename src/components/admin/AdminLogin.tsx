@@ -37,9 +37,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const LOCAL_ADMIN_EMAIL = "admin@hustlr.local";
-const LOCAL_ADMIN_PASSWORD = "hustlr-admin-2026";
-
 export default function AdminLogin() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -47,8 +44,8 @@ export default function AdminLogin() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: LOCAL_ADMIN_EMAIL,
-      password: LOCAL_ADMIN_PASSWORD,
+      email: "",
+      password: "",
     },
   });
 
@@ -95,6 +92,7 @@ export default function AdminLogin() {
               <form
                 onSubmit={form.handleSubmit(loginWithEmail)}
                 className="space-y-4"
+                autoComplete="off"
               >
                 <FormField
                   control={form.control}
@@ -107,6 +105,7 @@ export default function AdminLogin() {
                           {...field}
                           type="email"
                           placeholder="admin@example.com"
+                          autoComplete="off"
                           disabled={loading}
                         />
                       </FormControl>
@@ -125,6 +124,7 @@ export default function AdminLogin() {
                           {...field}
                           type="password"
                           placeholder="••••••••"
+                          autoComplete="new-password"
                           disabled={loading}
                         />
                       </FormControl>

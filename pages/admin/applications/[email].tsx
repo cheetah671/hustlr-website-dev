@@ -15,9 +15,15 @@ import { GetServerSideProps } from "next";
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const emailId = context.params?.email;
   const adminJwtToken = context.req.cookies.session;
-  const adminEmail = (
-    process.env.ADMIN_EMAIL || "admin@hustlr.local"
-  ).toLowerCase();
+  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+  if (!adminJwtToken || !adminEmail) {
+    return {
+      redirect: {
+        destination: "/admin/login",
+        permanent: false,
+      },
+    };
+  }
   const payload = verifyToken(adminJwtToken as string);
 
   const tokenEmail = String((payload as any)?.email || "").toLowerCase();

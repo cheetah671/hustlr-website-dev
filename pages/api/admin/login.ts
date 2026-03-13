@@ -3,10 +3,10 @@ import { createAdminToken } from "@/src/lib/jwt";
 import { firebaseAdminAuth } from "@/src/lib/firebase-admin";
 import { serialize } from "cookie";
 
-const ADMIN_EMAIL = (
-  process.env.ADMIN_EMAIL || "admin@hustlr.local"
-).toLowerCase();
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "hustlr-admin-2026";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+const ADMIN_CREDENTIALS_CONFIGURED = !!(ADMIN_EMAIL && ADMIN_PASSWORD);
 
 function setAdminSessionCookie(res: NextApiResponse, email: string) {
   const token = createAdminToken(email);
@@ -37,8 +37,11 @@ export default async function handler(
     typeof req.body?.password === "string" ? req.body.password : "";
 
   if (inputEmail || inputPassword) {
+    if (!ADMIN_CREDENTIALS_CONFIGURED) {
+      return res.status(500).json({ error: "Admin credentials not configured. Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables." });
+    }
     if (inputEmail === ADMIN_EMAIL && inputPassword === ADMIN_PASSWORD) {
-      setAdminSessionCookie(res, ADMIN_EMAIL);
+      setAdminSessionCookie(res, ADMIN_EMAIL!);
       return res.status(200).json({ success: true });
     }
     return res.status(401).json({ error: "Invalid admin credentials" });
@@ -47,6 +50,10 @@ export default async function handler(
   const idToken = req.headers.authorization?.split(" ")[1];
   if (!idToken)
     return res.status(401).json({ error: "No Firebase ID token provided" });
+
+  if (!ADMIN_EMAIL) {
+    return res.status(500).json({ error: "Admin email not configured. Set ADMIN_EMAIL environment variable." });
+  }
 
   try {
     const decoded = await firebaseAdminAuth.verifyIdToken(idToken);

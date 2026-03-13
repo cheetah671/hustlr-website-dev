@@ -2,14 +2,16 @@ import { supabaseAdmin } from "@/src/lib/supabase-admin";
 import { NextApiRequest, NextApiResponse } from "next";
 import { verifyToken } from "@/src/lib/jwt";
 
-const ADMIN_EMAIL = (
-  process.env.ADMIN_EMAIL || "admin@hustlr.local"
-).toLowerCase();
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.toLowerCase();
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (!ADMIN_EMAIL) {
+    return res.status(500).json({ success: false, error: "ADMIN_EMAIL is not configured" });
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({

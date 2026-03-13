@@ -75,13 +75,25 @@ export default function UploadFileInput({
     const fetchFileMeta = async () => {
       setFetching(true);
 
-      if (typeof form.getValues(name) !== "string") return; // path not set
+      if (typeof form.getValues(name) !== "string") {
+        setFetching(false);
+        return;
+      } // path not set
       const pathInBucket = form.getValues(name);
-      if (typeof pathInBucket !== "string") return;
+      if (typeof pathInBucket !== "string") {
+        setFetching(false);
+        return;
+      }
+
+      const normalizedPath = pathInBucket.trim();
+      if (!normalizedPath || !normalizedPath.startsWith("applications/")) {
+        setFetching(false);
+        return;
+      }
 
       try {
         const res = await fetch(
-          `/api/file/metadata?path=${encodeURIComponent(pathInBucket)}`,
+          `/api/file/metadata?path=${encodeURIComponent(normalizedPath)}`,
           {
             headers: {
               Authorization: `Bearer ${jwtToken}`, // Inject your token here

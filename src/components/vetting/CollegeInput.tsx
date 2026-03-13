@@ -43,21 +43,37 @@ export function CollegeInput({ form }: { form: FormFieldProp }) {
       setColleges([]);
       return;
     }
-    setLoading(true);
-    fetch(
-      `http://universities.hipolabs.com/search?name=${search}&country=india`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        setColleges(
-          data.map((college: any) => ({
-            label: college.name,
-            value: college.name,
-          }))
-        );
-      })
-      .finally(() => setLoading(false));
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      setLoading(true);
+      fetch(
+        `https://universities.hipolabs.com/search?name=${encodeURIComponent(search)}&country=india`,
+        { signal: controller.signal }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setColleges(
+            Array.isArray(data)
+              ? data.map((college: any) => ({
+                  label: college.name,
+                  value: college.name,
+                }))
+              : []
+          );
+        })
+        .catch((err) => {
+          if (err?.name !== "AbortError") {
+            console.error("College lookup failed", err);
+            setColleges([]);
+          }
+        })
+        .finally(() => setLoading(false));
+    }, 250);
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [search]);
 
   return (

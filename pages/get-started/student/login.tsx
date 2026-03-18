@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/form";
 import { createClient } from "@/src/lib/supabase/auth/component";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,6 +22,8 @@ import { Separator } from "@/components/ui/separator";
 import { Loader, LogOut } from "lucide-react";
 import { verifyToken } from "@/src/lib/jwt";
 import { GetServerSideProps } from "next";
+import { parse } from "cookie";
+
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z
@@ -38,7 +40,6 @@ const slideFadeVariants = {
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { parse } = require("cookie");
   const { req } = context;
   const cookies = req.headers.cookie;
 
@@ -55,7 +56,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
             props: { isAlreadyVerified: true, existingEmail: payload.email },
           };
         }
-      } catch (err) {
+      } catch {
         console.log("no session token or invalid token: ");
       }
     }
@@ -86,84 +87,135 @@ export default function LoginPage({
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"form" | "emailSent">("form");
+  const inFlightAuthRequest = useRef(false);
+
+  function beginAuthRequest(): boolean {
+    if (inFlightAuthRequest.current) return false;
+    inFlightAuthRequest.current = true;
+    setLoading(true);
+    return true;
+  }
+
+  function endAuthRequest() {
+    inFlightAuthRequest.current = false;
+    setLoading(false);
+  }
 
   async function logIn(values: LoginFormValues) {
-    setLoading(true);
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    });
+    if (!beginAuthRequest()) return;
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
 
-    console.log(data, error);
+      console.log(data, error);
 
-    if (error) {
-      switch (error.code) {
-        case "invalid_credentials":
-          form.setError("email", { message: "Invalid email or password." });
-          form.setError("password", { message: "Invalid email or password." });
-          toast.error("Invalid email or password.");
-          break;
-        case "user_not_found":
-          form.setError("email", {
-            message: "User not found. Please sign up.",
-          });
-          toast.error("User not found. Please sign up.");
-          break;
-        case "email_not_confirmed":
-          // const { error } = await supabaseClient.auth.resend({
-          //   type: "signup",
-          //   email: values.email,
-          //   options: {
-          //     emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=${window.location.origin}/auth/confirmEmail`,
-          //   },
-          // });
-          signUp(values);
-          break;
-        default:
-          toast.error("An unexpected error occurred.");
-          break;
+      if (error) {
+        switch (error.code) {
+          case "invalid_credentials":
+            form.setError("email", { message: "Invalid email or password." });
+            form.setError("password", {
+              message: "Invalid email or password.",
+            });
+            toast.error("Invalid email or password.");
+            break;
+          case "user_not_found":
+            form.setError("email", {
+              message: "User not found. Please sign up.",
+            });
+            toast.error("User not found. Please sign up.");
+            break;
+          case "email_not_confirmed":
+            // Never auto-signup from login failures; just resend confirmation once.
+            const { error: resendError } = await supabaseClient.auth.resend({
+              type: "signup",
+              email: values.email,
+              options: {
+                emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=${window.location.origin}/auth/confirmEmail`,
+              },
+            });
+
+            if (resendError) {
+              if (resendError.status === 429) {
+                toast.error(
+                  "Too many attempts. Please wait a minute and try again."
+                );
+              } else {
+                toast.error(resendError.message);
+              }
+            } else {
+              toast.success("Verification email sent. Please check your inbox.");
+              setStep("emailSent");
+            }
+            break;
+          default:
+            toast.error("An unexpected error occurred.");
+            break;
+        }
+        return;
       }
-      setLoading(false);
-      return;
-    }
 
-    const res = await fetch("/api/auth/exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: data.session?.access_token }),
-    });
+      if (!data.session?.access_token) {
+        toast.error("Unable to establish session. Please try again.");
+        return;
+      }
 
-    setLoading(false);
-    if (res.ok) {
-      toast.success("Logged in successfully!");
+      const res = await fetch("/api/auth/exchange", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: data.session.access_token }),
+      });
 
-      router.push("/get-started/student/application");
-    } else {
-      toast.error("Failed to login!");
-      router.push("/error");
+      if (res.ok) {
+        toast.success("Logged in successfully!");
+
+        router.push("/get-started/student/application");
+      } else {
+        toast.error("Failed to login!");
+        router.push("/error");
+      }
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      endAuthRequest();
     }
   }
 
   async function signUp(values: LoginFormValues) {
-    setLoading(true);
+    if (!beginAuthRequest()) return;
 
     // TODO: check if user exists and handle that case
-
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=${window.location.origin}/auth/confirmEmail`,
-      },
-    });
-    console.log(data);
-    setLoading(false);
-    if (error) {
-      form.setError("email", { message: error.message });
-      toast.error(error.message);
-      return;
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=${window.location.origin}/auth/confirmEmail`,
+        },
+      });
+      console.log(data);
+      if (error) {
+        if (error.status === 429) {
+          form.setError("email", {
+            message:
+              "Too many signup attempts. Please wait 60 seconds and try again.",
+          });
+          toast.error(
+            "Too many signup attempts. Please wait 60 seconds and try again."
+          );
+        } else {
+          form.setError("email", { message: error.message });
+          toast.error(error.message);
+        }
+        return;
+      }
+      setStep("emailSent");
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      endAuthRequest();
     }
-    setStep("emailSent");
   }
 
   if (isAlreadyVerified) {
@@ -171,7 +223,7 @@ export default function LoginPage({
       <>
         <Nav />
         <main className="bg-white min-h-screen flex items-center justify-center flex-col space-y-6">
-          <h1 className="text-2xl font-bold">You're already logged in!</h1>
+          <h1 className="text-2xl font-bold">You are already logged in!</h1>
           <p className="text-lg">
             Welcome back <span className="font-semibold">{existingEmail}</span>
           </p>
@@ -306,12 +358,12 @@ export default function LoginPage({
                 >
                   <h2 className="text-xl font-bold">Check your inbox!</h2>
                   <p className="text-gray-700">
-                    We've sent you a confirmation email. Please click the link
+                    We have sent you a confirmation email. Please click the link
                     to verify your account.
                     <br />
                     <br />
                     <span className="text-start">
-                      <strong>NOTE:</strong> If you don't see the email, you may
+                      <strong>NOTE:</strong> If you do not see the email, you may
                       already have an account. Try logging in instead.
                     </span>
                   </p>

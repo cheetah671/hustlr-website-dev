@@ -43,17 +43,17 @@ export default function ClientOnboardingPage() {
   const [companySize, setCompanySize] = useState("");
   const [country, setCountry] = useState("");
   const [description, setDescription] = useState("");
-  const [isCompleting, setIsCompleting] = useState(false);
+  const [viewState, setViewState] = useState<"form" | "loading" | "success">("form");
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    setIsCompleting(true);
+    setViewState("loading");
     await new Promise((resolve) => setTimeout(resolve, 3000));
-    router.push("/");
+    setViewState("success");
   }
 
-  if (isCompleting) {
+  if (viewState === "loading") {
     return (
       <>
         <Head>
@@ -87,6 +87,77 @@ export default function ClientOnboardingPage() {
             <p className="mt-8 max-w-md text-xl font-semibold leading-relaxed text-black/70">
               hustlr is trusted by startups, researchers, and companies looking to work with the next generation of talent.
             </p>
+          </section>
+        </main>
+      </>
+    );
+  }
+
+  if (viewState === "success") {
+    return (
+      <>
+        <Head>
+          <title>Onboarding Complete - Hustlr</title>
+        </Head>
+
+        <Nav />
+
+        <main className="min-h-screen bg-[#f4f4f4] pt-16 md:pt-20">
+          <section className="mx-auto flex min-h-[72vh] w-full max-w-[1200px] flex-col items-center justify-center px-6 text-center">
+            <div className="flex items-center gap-4">
+              <h1
+                className="text-4xl tracking-tight text-black/90 sm:text-5xl"
+                style={{
+                  fontFamily: 'var(--font-the-seasons), "FONTSPRING DEMO - The Seasons", serif',
+                  fontWeight: 700,
+                  fontStyle: "normal",
+                }}
+              >
+                Your Hustlr Account Is Ready
+              </h1>
+              <img
+                src="/images/celebration.png"
+                alt="Celebration"
+                className="h-16 w-16 object-contain mix-blend-multiply sm:h-20 sm:w-20"
+              />
+            </div>
+
+            <p className="mt-16 text-[1.7rem] font-semibold leading-tight text-[#58b7ba] sm:text-[1.95rem]">
+              Youre Ready to Post Your First Project
+            </p>
+            <p className="mt-4 whitespace-nowrap text-[1.35rem] font-semibold leading-tight text-black/85 sm:text-[1.5rem]">
+              You can now post a project and discover top student talent matched to your requirements.
+            </p>
+
+            <div className="mt-10 flex w-full max-w-xs flex-col gap-4">
+              <Button
+                type="button"
+                onClick={() => router.push("/")}
+                className="h-11 rounded-2xl bg-black text-base text-white hover:bg-black/90"
+                style={{
+                  fontFamily:
+                    '"FONTSPRING DEMO - TT Commons Pro DemiBold", "TT Commons Pro", "Poppins", sans-serif',
+                  fontWeight: 600,
+                  fontStyle: "normal",
+                }}
+              >
+                Post My First Project
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/admin")}
+                className="h-11 rounded-2xl border-black/20 bg-transparent text-base text-black hover:bg-black/5"
+                style={{
+                  fontFamily:
+                    '"FONTSPRING DEMO - TT Commons Pro DemiBold", "TT Commons Pro", "Poppins", sans-serif',
+                  fontWeight: 600,
+                  fontStyle: "normal",
+                }}
+              >
+                Go To Dashboard
+              </Button>
+            </div>
           </section>
         </main>
       </>
@@ -212,10 +283,10 @@ Ex: We are a fintech startup building tools that help small businesses manage pa
               <div className="pt-4">
                 <Button
                   type="submit"
-                  disabled={isCompleting}
+                  disabled={viewState !== "form"}
                   className="h-10 rounded-lg bg-black px-10 text-white hover:bg-black/90"
                 >
-                  {isCompleting ? "Please wait..." : "Complete Onboarding"}
+                  {viewState !== "form" ? "Please wait..." : "Complete Onboarding"}
                 </Button>
               </div>
             </form>

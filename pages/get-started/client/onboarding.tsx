@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const INDUSTRY_OPTIONS = [
   "Technology",
@@ -34,6 +35,8 @@ const SIZE_OPTIONS = [
 const COUNTRY_OPTIONS = ["India", "United States", "United Kingdom", "Singapore", "Australia"];
 const LOADER_SEGMENTS = Array.from({ length: 12 }, (_, index) => index);
 
+const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
+
 export default function ClientOnboardingPage() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
@@ -45,8 +48,35 @@ export default function ClientOnboardingPage() {
   const [description, setDescription] = useState("");
   const [viewState, setViewState] = useState<"form" | "loading" | "success">("form");
 
+  function validateOnboardingForm() {
+    if (!companyName.trim()) return "Company Name is required.";
+    if (companyName.trim().length < 2) return "Company Name must be at least 2 characters.";
+
+    if (!website.trim()) return "Company Website is required.";
+    if (!URL_REGEX.test(website.trim())) return "Please enter a valid Company Website URL.";
+
+    if (!linkedin.trim()) return "Company LinkedIn is required.";
+    if (!URL_REGEX.test(linkedin.trim())) return "Please enter a valid LinkedIn URL.";
+
+    if (!industry) return "Please select your Industry.";
+    if (!companySize) return "Please select your Company Size.";
+    if (!country) return "Please select your Country.";
+
+    if (!description.trim()) return "Company Description is required.";
+    const wordCount = description.trim().split(/\s+/).length;
+    if (wordCount > 50) return "Company Description must be 50 words or fewer.";
+
+    return null;
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    const validationError = validateOnboardingForm();
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
 
     setViewState("loading");
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -189,6 +219,7 @@ export default function ClientOnboardingPage() {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold">Company Name</label>
                 <Input
+                  required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="h-8 rounded-md border-black/10 bg-[#eaeaea] text-sm text-black placeholder:text-black/45"
@@ -198,6 +229,7 @@ export default function ClientOnboardingPage() {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold">Company Website</label>
                 <Input
+                  required
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   className="h-8 rounded-md border-black/10 bg-[#eaeaea] text-sm text-black placeholder:text-black/45"
@@ -207,6 +239,7 @@ export default function ClientOnboardingPage() {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold">Company LinkedIn</label>
                 <Input
+                  required
                   value={linkedin}
                   onChange={(e) => setLinkedin(e.target.value)}
                   className="h-8 rounded-md border-black/10 bg-[#eaeaea] text-sm text-black placeholder:text-black/45"
@@ -271,6 +304,7 @@ export default function ClientOnboardingPage() {
                   <span className="text-xs text-black/55">Word limit: 50</span>
                 </div>
                 <Textarea
+                  required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={`Briefly explain what your company does

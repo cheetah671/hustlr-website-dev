@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { CLIENT_PROFILE_STORAGE_KEY } from "@/src/lib/clientTypes";
 
 const INDUSTRY_OPTIONS = [
   "Technology",
@@ -36,7 +37,6 @@ const COUNTRY_OPTIONS = ["India", "United States", "United Kingdom", "Singapore"
 const LOADER_SEGMENTS = Array.from({ length: 12 }, (_, index) => index);
 
 const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
-const CLIENT_PROFILE_STORAGE_KEY = "hustlr.client.profile";
 
 export default function ClientOnboardingPage() {
   const router = useRouter();
@@ -80,19 +80,24 @@ export default function ClientOnboardingPage() {
       return;
     }
 
-    window.localStorage.setItem(
-      CLIENT_PROFILE_STORAGE_KEY,
-      JSON.stringify({
-        companyName: companyName.trim(),
-        website: website.trim(),
-        linkedin: linkedin.trim(),
-        industry,
-        companySize,
-        country,
-        description: description.trim(),
-        studentWorkReason: studentWorkReason.trim(),
-      }),
-    );
+    try {
+      window.localStorage.setItem(
+        CLIENT_PROFILE_STORAGE_KEY,
+        JSON.stringify({
+          companyName: companyName.trim(),
+          website: website.trim(),
+          linkedin: linkedin.trim(),
+          industry,
+          companySize,
+          country,
+          description: description.trim(),
+          studentWorkReason: studentWorkReason.trim(),
+        }),
+      );
+    } catch {
+      toast.error("Could not save your profile locally. Please try again.");
+      return;
+    }
 
     setViewState("loading");
     await new Promise((resolve) => setTimeout(resolve, 3000));

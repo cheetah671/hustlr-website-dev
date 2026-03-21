@@ -4,37 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import Nav from "@/src/components/Nav";
 import { Button } from "@/components/ui/button";
-
-type SkillLevel = "Required" | "Good to have";
-
-type SkillItem = {
-  name: string;
-  level: SkillLevel;
-};
-
-type JobPostDraft = {
-  title: string;
-  category: string;
-  description: string;
-  timelineEstimate: string;
-  deliverables: string;
-  budget: number;
-  skills: SkillItem[];
-};
-
-type ClientProfile = {
-  companyName: string;
-  website: string;
-  linkedin: string;
-  industry: string;
-  companySize: string;
-  country: string;
-  description: string;
-  studentWorkReason: string;
-};
-
-const JOB_POST_DRAFT_STORAGE_KEY = "hustlr.client.jobPostDraft";
-const CLIENT_PROFILE_STORAGE_KEY = "hustlr.client.profile";
+import {
+  JOB_POST_DRAFT_STORAGE_KEY,
+  CLIENT_PROFILE_STORAGE_KEY,
+} from "@/src/lib/clientTypes";
+import type { SkillItem, JobPostDraft, ClientProfile } from "@/src/lib/clientTypes";
 
 const DEFAULT_CLIENT_PROFILE: ClientProfile = {
   companyName: "Your Company",

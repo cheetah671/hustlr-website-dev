@@ -9,6 +9,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        serif: ["var(--font-the-seasons)", "serif"],
+        ovo: ["var(--font-ovo)", "serif"],
         logo: ["var(--font-the-seasons)", "serif"],
         heading: ["var(--font-the-seasons)", "serif"],
         subheading: ["var(--font-ovo)", "serif"],

@@ -23,13 +23,8 @@ import {
 import { Check, ChevronsUpDown, Loader, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
-
-type SkillLevel = "Required" | "Good to have";
-
-type SkillItem = {
-  name: string;
-  level: SkillLevel;
-};
+import { JOB_POST_DRAFT_STORAGE_KEY } from "@/src/lib/clientTypes";
+import type { SkillLevel, SkillItem, JobPostDraft } from "@/src/lib/clientTypes";
 
 const PROJECT_CATEGORIES = [
   "Web Development",
@@ -302,17 +297,6 @@ const BUDGET_STEP = 500;
 const PREVIEW_DELAY_MS = 1800;
 const PROJECT_SUBMITTED_REDIRECT_DELAY_MS = 2500;
 const MAX_SKILLS = 20;
-const JOB_POST_DRAFT_STORAGE_KEY = "hustlr.client.jobPostDraft";
-
-type JobPostDraft = {
-  title: string;
-  category: string;
-  description: string;
-  timelineEstimate: string;
-  deliverables: string;
-  budget: number;
-  skills: SkillItem[];
-};
 
 export default function ClientJobPostPage() {
   const router = useRouter();
@@ -387,7 +371,8 @@ export default function ClientJobPostPage() {
         submittedTimerRef.current = null;
       }, PROJECT_SUBMITTED_REDIRECT_DELAY_MS);
     }
-  }, [router, router.isReady, router.query.view]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.view]);
 
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -499,7 +484,11 @@ export default function ClientJobPostPage() {
       skills,
     };
 
-    window.localStorage.setItem(JOB_POST_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    try {
+      window.localStorage.setItem(JOB_POST_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      toast.error("Could not save your draft locally. Please try again.");
+    }
   }
 
   function validateStepOne() {
@@ -648,11 +637,12 @@ export default function ClientJobPostPage() {
                 {step === 1 ? (
                   <>
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-black">Project Title</label>
+                      <label htmlFor="job-post-title" className="block text-sm font-semibold text-black">Project Title</label>
                       <p className="text-[11px] text-[#7e8f4f]">
                         Keep the title clear and specific so students understand the project quickly.
                       </p>
                       <Input
+                        id="job-post-title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         className="h-9 rounded-md border border-black/20 bg-[#e9e9e9] text-sm font-sans text-black"
@@ -660,7 +650,7 @@ export default function ClientJobPostPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-black">Project Category</label>
+                      <label htmlFor="job-post-category" className="block text-sm font-semibold text-black">Project Category</label>
                       <p className="text-[11px] text-[#7e8f4f]">
                         This helps us match your project with students who have expertise in this area.
                       </p>
@@ -681,11 +671,12 @@ export default function ClientJobPostPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-black">Project Description</label>
+                      <label htmlFor="job-post-description" className="block text-sm font-semibold text-black">Project Description</label>
                       <p className="text-[11px] text-[#7e8f4f]">
                         Clear project descriptions attract better students.
                       </p>
                       <Textarea
+                        id="job-post-description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={5}
@@ -819,8 +810,9 @@ export default function ClientJobPostPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-black">Weeks</label>
+                      <label htmlFor="job-post-timeline" className="block text-sm font-semibold text-black">Weeks</label>
                       <Input
+                        id="job-post-timeline"
                         value={timelineEstimate}
                         onChange={(e) => setTimelineEstimate(e.target.value)}
                         placeholder="e.g. 2 months or 3 weeks"
@@ -832,11 +824,12 @@ export default function ClientJobPostPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-2xl font-semibold text-black">Deliverables</label>
+                      <label htmlFor="job-post-deliverables" className="block text-2xl font-semibold text-black">Deliverables</label>
                       <p className="text-[11px] text-[#7e8f4f]">
                         List what the final outcome of the project should include.
                       </p>
                       <Textarea
+                        id="job-post-deliverables"
                         value={deliverables}
                         onChange={(e) => setDeliverables(e.target.value)}
                         rows={5}

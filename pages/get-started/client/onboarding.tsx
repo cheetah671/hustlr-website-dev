@@ -36,6 +36,7 @@ const COUNTRY_OPTIONS = ["India", "United States", "United Kingdom", "Singapore"
 const LOADER_SEGMENTS = Array.from({ length: 12 }, (_, index) => index);
 
 const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
+const CLIENT_PROFILE_STORAGE_KEY = "hustlr.client.profile";
 
 export default function ClientOnboardingPage() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function ClientOnboardingPage() {
   const [companySize, setCompanySize] = useState("");
   const [country, setCountry] = useState("");
   const [description, setDescription] = useState("");
+  const [studentWorkReason, setStudentWorkReason] = useState("");
   const [viewState, setViewState] = useState<"form" | "loading" | "success">("form");
 
   function validateOnboardingForm() {
@@ -77,6 +79,20 @@ export default function ClientOnboardingPage() {
       toast.error(validationError);
       return;
     }
+
+    window.localStorage.setItem(
+      CLIENT_PROFILE_STORAGE_KEY,
+      JSON.stringify({
+        companyName: companyName.trim(),
+        website: website.trim(),
+        linkedin: linkedin.trim(),
+        industry,
+        companySize,
+        country,
+        description: description.trim(),
+        studentWorkReason: studentWorkReason.trim(),
+      }),
+    );
 
     setViewState("loading");
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -157,10 +173,7 @@ export default function ClientOnboardingPage() {
             <div className="mt-10 flex w-full max-w-xs flex-col gap-4">
               <Button
                 type="button"
-                onClick={() => {
-                  toast.info("Project posting is coming soon!");
-                  router.push("/");
-                }}
+                onClick={() => router.push("/get-started/client/job-post")}
                 className="h-11 rounded-2xl bg-black text-base font-semibold text-white hover:bg-black/90"
               >
                 Post My First Project
@@ -193,7 +206,7 @@ export default function ClientOnboardingPage() {
 
       <main className="min-h-screen bg-[#f4f4f4] pt-16 md:pt-20">
         <section className="px-6 py-10 sm:px-10 md:px-14 lg:px-24">
-          <div className="w-full max-w-2xl font-sans text-black">
+          <div className="mx-auto w-full max-w-2xl font-ovo text-black">
             <h1 className="font-serif text-4xl font-normal tracking-tight text-black/90">
               Tell Us About Your Business
             </h1>
@@ -206,43 +219,43 @@ export default function ClientOnboardingPage() {
 
             <form onSubmit={onSubmit} className="mt-12 space-y-7">
               <div className="space-y-2">
-                <label htmlFor="onboarding-company-name" className="block text-sm font-semibold">Company Name</label>
+                <label htmlFor="onboarding-company-name" className="block text-sm font-semibold text-black">Company Name</label>
                 <Input
                   id="onboarding-company-name"
                   required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="h-8 rounded-md border-black/10 bg-[#eaeaea] text-sm text-black placeholder:text-black/45"
+                  className="h-8 rounded-md border border-black/25 bg-slate-50 text-sm font-sans text-black"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="onboarding-website" className="block text-sm font-semibold">Company Website</label>
+                <label htmlFor="onboarding-website" className="block text-sm font-semibold text-black">Company Website</label>
                 <Input
                   id="onboarding-website"
                   required
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="h-8 rounded-md border-black/10 bg-[#eaeaea] text-sm text-black placeholder:text-black/45"
+                  className="h-8 rounded-md border border-black/25 bg-slate-50 text-sm font-sans text-black"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="onboarding-linkedin" className="block text-sm font-semibold">Company LinkedIn</label>
+                <label htmlFor="onboarding-linkedin" className="block text-sm font-semibold text-black">Company LinkedIn</label>
                 <Input
                   id="onboarding-linkedin"
                   required
                   value={linkedin}
                   onChange={(e) => setLinkedin(e.target.value)}
-                  className="h-8 rounded-md border-black/10 bg-[#eaeaea] text-sm text-black placeholder:text-black/45"
+                  className="h-8 rounded-md border border-black/25 bg-slate-50 text-sm font-sans text-black"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="onboarding-industry" className="block text-sm font-semibold">Industry</label>
+                <label htmlFor="onboarding-industry" className="block text-sm font-semibold text-black">Industry</label>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center">
                   <Select value={industry} onValueChange={setIndustry}>
-                    <SelectTrigger className="h-8 w-full md:w-[220px] rounded-md border-black/10 bg-[#eaeaea] text-sm text-black">
+                    <SelectTrigger className="h-8 w-full md:w-[220px] rounded-md border border-black/25 bg-slate-50 text-sm font-sans text-black">
                       <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
@@ -257,10 +270,10 @@ export default function ClientOnboardingPage() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="onboarding-company-size" className="block text-sm font-semibold">Company Size</label>
+                <label htmlFor="onboarding-company-size" className="block text-sm font-semibold text-black">Company Size</label>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center">
                   <Select value={companySize} onValueChange={setCompanySize}>
-                    <SelectTrigger className="h-8 w-full md:w-[220px] rounded-md border-black/10 bg-[#eaeaea] text-sm text-black">
+                    <SelectTrigger className="h-8 w-full md:w-[220px] rounded-md border border-black/25 bg-slate-50 text-sm font-sans text-black">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -275,9 +288,9 @@ export default function ClientOnboardingPage() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="onboarding-country" className="block text-sm font-semibold">Country</label>
+                <label htmlFor="onboarding-country" className="block text-sm font-semibold text-black">Country</label>
                 <Select value={country} onValueChange={setCountry}>
-                  <SelectTrigger className="h-8 w-full md:w-[220px] rounded-md border-black/10 bg-[#eaeaea] text-sm text-black">
+                  <SelectTrigger className="h-8 w-full md:w-[220px] rounded-md border border-black/25 bg-slate-50 text-sm font-sans text-black">
                     <SelectValue/>
                   </SelectTrigger>
                   <SelectContent>
@@ -292,7 +305,7 @@ export default function ClientOnboardingPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <label htmlFor="onboarding-description" className="block text-sm font-semibold">Company Description</label>
+                  <label htmlFor="onboarding-description" className="block text-sm font-semibold text-black">Company Description</label>
                   <span className="text-xs text-black/55">Word limit: 50</span>
                 </div>
                 <Textarea
@@ -303,7 +316,20 @@ export default function ClientOnboardingPage() {
                   placeholder={`Briefly explain what your company does
 Ex: We are a fintech startup building tools that help small businesses manage payments.`}
                   rows={3}
-                  className="min-h-[84px] resize-none rounded-md border-black/10 bg-[#eaeaea] py-2 text-sm text-black placeholder:text-black/45"
+                  className="min-h-[84px] resize-none rounded-md border border-black/25 bg-slate-50 py-2 text-sm font-sans text-black"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="onboarding-student-work-reason" className="block text-sm font-semibold text-black">Why should students work with you?</label>
+                <Textarea
+                  id="onboarding-student-work-reason"
+                  value={studentWorkReason}
+                  onChange={(e) => setStudentWorkReason(e.target.value)}
+                  placeholder={`Share what makes your company a great place for students to work.
+Ex: Students get ownership, mentorship from senior team members, and real impact on live projects.`}
+                  rows={3}
+                  className="min-h-[84px] resize-none rounded-md border border-black/25 bg-slate-50 py-2 text-sm font-sans text-black"
                 />
               </div>
 

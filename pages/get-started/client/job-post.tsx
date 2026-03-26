@@ -446,7 +446,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       }
 
       submittedTimerRef.current = window.setTimeout(() => {
-        void router.push("/");
+        void router.push("/get-started/client/dashboard");
         submittedTimerRef.current = null;
       }, PROJECT_SUBMITTED_REDIRECT_DELAY_MS);
     }
@@ -684,7 +684,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
             </div>
 
             <p className="mt-9 text-[1.35rem] font-semibold leading-tight text-black/80 sm:text-[1.55rem]">
-              Redirecting you to the homepage while we set up your dashboard..
+              Redirecting you to your dashboard..
             </p>
           </section>
         )}

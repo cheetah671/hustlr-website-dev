@@ -154,7 +154,7 @@ export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: 
         return;
       }
 
-      void router.push("/get-started/client/job-post?view=submitted");
+      void router.push("/get-started/client/dashboard");
     } catch {
       toast.error("Network error. Please try again.");
       setIsPosting(false);

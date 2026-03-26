@@ -229,8 +229,7 @@ export default function ClientOnboardingPage({ clientEmail }: { clientEmail: str
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  toast.info("Client dashboard is coming soon!");
-                  void router.push("/");
+                  void router.push("/get-started/client/dashboard");
                 }}
                 className="h-11 rounded-2xl border-black/20 bg-transparent text-base font-semibold text-black hover:bg-black/5"
               >

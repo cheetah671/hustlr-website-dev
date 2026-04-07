@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import {
   Star,
   Settings,
@@ -292,6 +292,31 @@ export default function ClientProjectPage({
     void router.prefetch(`/get-started/client/project/${project.id}/chat`);
   }, [router, project.id]);
 
+  const dismissExpandedStudent = useCallback(() => {
+    setExpandedStudent(null);
+    const q = router.query.student;
+    if (q !== undefined && q !== "" && !(Array.isArray(q) && q.length === 0)) {
+      void router.replace(`/get-started/client/project/${project.id}`, undefined, { shallow: true });
+    }
+  }, [router, project.id]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const raw = router.query.student;
+    const emailParam =
+      typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : undefined;
+    if (!emailParam || typeof emailParam !== "string") return;
+    try {
+      const decoded = decodeURIComponent(emailParam);
+      const match = students.find(
+        (s) => s.email && s.email.toLowerCase() === decoded.toLowerCase(),
+      );
+      if (match) setExpandedStudent(match);
+    } catch {
+      // ignore malformed query
+    }
+  }, [router.isReady, router.query.student, students]);
+
   const projectName = project.title || "Project Name";
 
   /* Filter students by tab */
@@ -484,7 +509,7 @@ export default function ClientProjectPage({
             <button
               type="button"
               onClick={() =>
-                void router.push("/get-started/client/job-post-review")
+                void router.push("/get-started/client/job-post-review?view=readonly")
               }
               className="shrink-0 rounded-xl bg-[#57B1B2] px-5 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-[#4a9a9b]"
             >
@@ -737,7 +762,7 @@ export default function ClientProjectPage({
       {expandedStudent && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={() => setExpandedStudent(null)}
+          onClick={() => dismissExpandedStudent()}
         >
           <div
             className="relative mx-4 max-h-[90vh] w-full min-w-0 max-w-[820px] overflow-x-hidden overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl"
@@ -746,7 +771,7 @@ export default function ClientProjectPage({
             {/* Close */}
             <button
               type="button"
-              onClick={() => setExpandedStudent(null)}
+              onClick={() => dismissExpandedStudent()}
               className="absolute right-5 top-5 flex items-center gap-1 text-[13px] font-medium text-gray-600 hover:text-gray-1000 transition-colors"
             >
               <X className="h-4 w-4" />
@@ -1044,7 +1069,7 @@ export default function ClientProjectPage({
                   
                   setIsShortlisting(false);
                   setShowShortlistConfirm(false);
-                  setExpandedStudent(null);
+                  dismissExpandedStudent();
                   toast.success(`${expandedStudent?.name} has been added to your shortlist.`);
                 }}
                 className={`flex items-center justify-center rounded-xl bg-gray-900 py-3 text-sm font-bold text-white transition-all ${isShortlisting ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] active:scale-[0.98] hover:bg-black'}`}

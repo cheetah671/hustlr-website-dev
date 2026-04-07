@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { getClientEmailFromSSP } from "@/src/lib/clientAuthUtils";
 import { supabaseAdmin } from "@/src/lib/supabase-admin";
+import { toast } from "sonner";
 
 type JobPost = {
   id: string;
@@ -298,7 +299,9 @@ export default function ClientProjectChatPage({
 
               <button
                 type="button"
-                onClick={() => void router.push("/get-started/client/job-post-review")}
+                onClick={() =>
+                  void router.push("/get-started/client/job-post-review?view=readonly")
+                }
                 className="shrink-0 rounded-2xl bg-[#57b1b2] px-8 py-3 text-[13px] font-semibold text-white shadow"
               >
                 View Your Job Posting
@@ -363,7 +366,15 @@ export default function ClientProjectChatPage({
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => void router.push(`/get-started/client/project/${project.id}`)}
+                    onClick={() => {
+                      if (!selectedStudent?.email) {
+                        toast.error("Select a student from the list first.");
+                        return;
+                      }
+                      void router.push(
+                        `/get-started/client/project/${project.id}?student=${encodeURIComponent(selectedStudent.email)}`,
+                      );
+                    }}
                     className="rounded-2xl bg-[#8bd2d2] px-7 py-2.5 text-[13px] font-semibold text-white shadow"
                   >
                     View Student Profile

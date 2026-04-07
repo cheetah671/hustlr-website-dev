@@ -48,8 +48,17 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return { props: { clientEmail } };
 };
 
+function queryViewReadonly(router: ReturnType<typeof useRouter>): boolean {
+  if (!router.isReady) return false;
+  const v = router.query.view;
+  if (v === "readonly") return true;
+  if (Array.isArray(v) && v[0] === "readonly") return true;
+  return false;
+}
+
 export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: string }) {
   const router = useRouter();
+  const isReadOnlyView = queryViewReadonly(router);
   const [previewTab, setPreviewTab] = useState<"details" | "client">("details");
   const [draft, setDraft] = useState<JobPostDraft | null>(null);
   const [clientProfile, setClientProfile] = useState<ClientProfile>(DEFAULT_CLIENT_PROFILE);
@@ -253,7 +262,11 @@ export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: 
               This is how your project will appear to students.
             </p>
 
-            <div className="mt-8 grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_220px]">
+            <div
+              className={`mt-8 grid min-w-0 grid-cols-1 gap-8 ${
+                isReadOnlyView ? "" : "lg:grid-cols-[minmax(0,1fr)_220px]"
+              }`}
+            >
               <article className="mx-auto min-w-0 w-full max-w-[700px] overflow-hidden rounded-[10px] bg-[#e9e9e9] p-8 font-ovo text-black [word-break:break-word]">
                 <h2 className="mx-auto max-w-full text-center text-5xl text-black/90 break-words [overflow-wrap:anywhere]">
                   {draft.title || "Untitled Project"}
@@ -373,25 +386,27 @@ export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: 
                 )}
               </article>
 
-              <aside className="flex h-fit shrink-0 flex-col gap-3 lg:pt-1">
-                <Button
-                  type="button"
-                  disabled={isPosting}
-                  onClick={() => void onPostProject()}
-                  className="h-10 rounded-lg bg-[#a9c165] text-sm font-semibold text-white hover:bg-[#95af57]"
-                >
-                  {isPosting ? "Posting..." : "Post Project"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    void router.push("/get-started/client/job-post?from=review");
-                  }}
-                  className="h-10 rounded-lg bg-[#a9a9a9] text-sm font-semibold text-white hover:bg-[#969696]"
-                >
-                  Edit Project
-                </Button>
-              </aside>
+              {!isReadOnlyView && (
+                <aside className="flex h-fit shrink-0 flex-col gap-3 lg:pt-1">
+                  <Button
+                    type="button"
+                    disabled={isPosting}
+                    onClick={() => void onPostProject()}
+                    className="h-10 rounded-lg bg-[#a9c165] text-sm font-semibold text-white hover:bg-[#95af57]"
+                  >
+                    {isPosting ? "Posting..." : "Post Project"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      void router.push("/get-started/client/job-post?from=review");
+                    }}
+                    className="h-10 rounded-lg bg-[#a9a9a9] text-sm font-semibold text-white hover:bg-[#969696]"
+                  >
+                    Edit Project
+                  </Button>
+                </aside>
+              )}
             </div>
           </section>
         )}

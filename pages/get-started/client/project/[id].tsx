@@ -235,6 +235,10 @@ export default function ClientProjectPage({
   const [isShortlisting, setIsShortlisting] = useState(false);
   const [showShortlistConfirm, setShowShortlistConfirm] = useState(false);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -767,6 +771,16 @@ export default function ClientProjectPage({
               </p>
             </div>
           )}
+
+          <div className="mt-16 flex justify-center pb-12">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="rounded-xl border bg-red-600 px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-red-700 hover:text-white"
+            >
+              Delete Project
+            </button>
+          </div>
         </main>
         </div>
       </div>
@@ -1047,6 +1061,68 @@ export default function ClientProjectPage({
                 className={`rounded-xl px-8 py-3 text-[14px] font-bold text-white shadow-md transition-colors ${shortlistedEmails.has(expandedStudent?.email || '') ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-900 hover:bg-gray-800'}`}
               >
                 {shortlistedEmails.has(expandedStudent?.email || '') ? 'Shortlisted ✓' : 'Shortlist Student'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
+          <div className="mx-4 w-full min-w-0 max-w-[400px] overflow-hidden rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <h3 className="text-2xl font-bold text-black">Delete Project</h3>
+            <p className="mt-3 text-sm leading-relaxed text-gray-600 break-words [overflow-wrap:anywhere]">
+              This action cannot be undone. All project details, drafts, and shortlisted students will be permanently deleted.
+            </p>
+            <p className="mt-4 text-sm font-semibold text-gray-800 break-words [overflow-wrap:anywhere]">
+              To confirm, type <span className="select-all rounded bg-gray-100 px-1 font-mono text-red-600">{companyName}/{project.title}</span> below:
+            </p>
+            <input
+              type="text"
+              value={deleteInput}
+              onChange={(e) => setDeleteInput(e.target.value)}
+              className="mt-3 w-full min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black focus:ring-1 focus:ring-black"
+              placeholder={`${companyName}/${project.title}`}
+            />
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                disabled={isDeleting || deleteInput !== `${companyName}/${project.title}`}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    const res = await fetch("/api/client/job-post/delete", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ id: project.id }),
+                    });
+                    if (!res.ok) throw new Error();
+                    toast.success("Project deleted successfully");
+                    void router.push("/get-started/client/dashboard");
+                  } catch {
+                    toast.error("Failed to delete project");
+                    setIsDeleting(false);
+                  }
+                }}
+                className={`flex items-center justify-center rounded-xl bg-red-600 py-3 text-sm font-bold text-white transition-all ${
+                  isDeleting || deleteInput !== `${companyName}/${project.title}`
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-red-700"
+                }`}
+              >
+                {isDeleting ? "Deleting..." : "Permanently Delete"}
+              </button>
+              
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteInput("");
+                }}
+                className="rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>

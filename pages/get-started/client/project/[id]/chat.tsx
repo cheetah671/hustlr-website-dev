@@ -35,6 +35,7 @@ type ChatPageProps = {
   clientEmail: string;
   companyName: string;
   project: JobPost;
+  allProjects: JobPost[];
   students: StudentRow[];
 };
 
@@ -105,6 +106,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   }
 
+  const { data: allPosts } = await supabaseAdmin
+    .from("job_posts")
+    .select("id, title, category, created_at")
+    .eq("client_email", clientEmail)
+    .order("created_at", { ascending: false });
+
   const { data: studentsRaw } = await supabaseAdmin
     .from("vettingapplications")
     .select("name, email, college")
@@ -116,6 +123,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       clientEmail,
       companyName: profile.company_name || "Your Company",
       project,
+      allProjects: allPosts || [],
       students: (studentsRaw || []) as StudentRow[],
     },
   };
@@ -124,6 +132,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 export default function ClientProjectChatPage({
   clientEmail,
   project,
+  allProjects,
   students,
 }: ChatPageProps) {
   const router = useRouter();
@@ -268,13 +277,30 @@ export default function ClientProjectChatPage({
                 Home
               </button>
 
-              <div className="mb-3 flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-left text-[12px] font-semibold text-white">
-                {getCategoryIcon(project.category, "h-3.5 w-3.5 shrink-0")}
-                <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
-                  {projectName.length > 12
-                    ? `${projectName.slice(0, 12)}...`
-                    : projectName}
-                </span>
+              <div className="mb-3 space-y-1">
+                {allProjects.map((p) => {
+                  const isActive = p.id === project.id;
+                  const pName = p.title || "Untitled";
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() =>
+                        void router.push(`/get-started/client/project/${p.id}/chat`)
+                      }
+                      className={`flex w-full min-w-0 items-center gap-1.5 rounded-lg px-3 py-2 text-left text-[12px] transition-colors ${
+                        isActive
+                          ? "bg-gray-900 font-semibold text-white"
+                          : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                    >
+                      {getCategoryIcon(p.category, `h-3.5 w-3.5 shrink-0 ${isActive ? "text-gray-300" : "text-gray-400"}`)}
+                      <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
+                        {pName.length > 12 ? `${pName.slice(0, 12)}...` : pName}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

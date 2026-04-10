@@ -275,9 +275,7 @@ export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: 
             </p>
 
             <div
-              className={`mt-8 grid min-w-0 grid-cols-1 gap-8 ${
-                isReadOnlyView ? "" : "lg:grid-cols-[minmax(0,1fr)_220px]"
-              }`}
+              className={`mt-8 grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_220px]`}
             >
               <article className="mx-auto min-w-0 w-full max-w-[700px] overflow-hidden rounded-[10px] bg-[#e9e9e9] p-8 font-ovo text-black [word-break:break-word]">
                 <h2 className="mx-auto max-w-full text-center text-5xl text-black/90 break-words [overflow-wrap:anywhere]">
@@ -398,7 +396,7 @@ export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: 
                 )}
               </article>
 
-              {!isReadOnlyView && (
+              {!isReadOnlyView ? (
                 <aside className="flex h-fit shrink-0 flex-col gap-3 lg:pt-1">
                   <Button
                     type="button"
@@ -406,12 +404,30 @@ export default function ClientJobPostReviewPage({ clientEmail }: { clientEmail: 
                     onClick={() => void onPostProject()}
                     className="h-10 rounded-lg bg-[#a9c165] text-sm font-semibold text-white hover:bg-[#95af57]"
                   >
-                    {isPosting ? "Posting..." : "Post Project"}
+                    {isPosting
+                      ? draft?.status === "published"
+                        ? "Updating..."
+                        : "Posting..."
+                      : draft?.status === "published"
+                      ? "Update Project"
+                      : "Post Project"}
                   </Button>
                   <Button
                     type="button"
                     onClick={() => {
                       void router.push("/get-started/client/job-post?from=review");
+                    }}
+                    className="h-10 rounded-lg bg-[#a9a9a9] text-sm font-semibold text-white hover:bg-[#969696]"
+                  >
+                    Edit Project
+                  </Button>
+                </aside>
+              ) : (
+                <aside className="flex h-fit shrink-0 flex-col gap-3 lg:pt-1">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      void router.push(`/get-started/client/job-post?id=${draft.id}&resume=1`);
                     }}
                     className="h-10 rounded-lg bg-[#a9a9a9] text-sm font-semibold text-white hover:bg-[#969696]"
                   >

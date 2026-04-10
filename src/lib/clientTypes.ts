@@ -14,6 +14,7 @@ export type JobPostDraft = {
   deliverables: string;
   budget: number;
   skills: SkillItem[];
+  status?: string;
 };
 
 export type ClientProfile = {

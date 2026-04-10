@@ -429,6 +429,8 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
   const [openSkillPopovers, setOpenSkillPopovers] = useState<Record<number, boolean>>({});
   const [skillSearchQueries, setSkillSearchQueries] = useState<Record<number, string>>({});
   const [skills, setSkills] = useState<SkillItem[]>([]);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftStatus, setDraftStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(true);
   const routeTimerRef = useRef<number | null>(null);
@@ -476,6 +478,8 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       setSkills([]);
       setOpenSkillPopovers({});
       setSkillSearchQueries({});
+      setDraftId(null);
+      setDraftStatus(null);
       setStep(1);
       setIsLoadingDraft(false);
     }
@@ -503,6 +507,8 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       setTimelineMonths(months);
       setTimelineWeeks(weeks);
       setSkills(normalizeJobPostSkills(d.skills));
+      if (d.id) setDraftId(d.id);
+      if (d.status) setDraftStatus(d.status);
       setOpenSkillPopovers({});
       setSkillSearchQueries({});
       // Always land on step 1 ("Post Your First Project"); step 2 fields stay prefilled when they continue.
@@ -511,7 +517,11 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
 
     async function loadDraft() {
       try {
-        const res = await fetch("/api/client/job-post/get");
+        const editId = router.query.id;
+        const fetchUrl = editId
+          ? `/api/client/job-post/get?id=${editId}`
+          : "/api/client/job-post/get";
+        const res = await fetch(fetchUrl);
         if (res.ok) {
           const body = (await res.json()) as { draft: JobPostDraft | null };
           if (!cancelled && body.draft) {
@@ -567,7 +577,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
     return () => {
       cancelled = true;
     };
-  }, [router.isReady, router.query.new, router.query.from, router.query.resume]);
+  }, [router.isReady, router.query.new, router.query.from, router.query.resume, router.query.id]);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -674,6 +684,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
     }
 
     const draft: JobPostDraft = {
+      id: draftId || undefined,
       title: title.trim(),
       category,
       description: description.trim(),
@@ -681,6 +692,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       deliverables: deliverables.trim(),
       budget,
       skills,
+      status: draftStatus || undefined,
     };
 
     try {

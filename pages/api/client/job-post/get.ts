@@ -50,6 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         timelineEstimate: data.timeline_estimate ?? "",
         deliverables: data.deliverables ?? "",
         budget: typeof data.budget === "number" ? data.budget : 0,
+        minimumSalary: typeof data.minimum_salary === "number" ? data.minimum_salary : 0,
         skills: Array.isArray(data.skills) ? data.skills : [],
         status: data.status,
       },

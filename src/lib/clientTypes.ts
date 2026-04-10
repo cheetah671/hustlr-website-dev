@@ -13,6 +13,7 @@ export type JobPostDraft = {
   timelineEstimate: string;
   deliverables: string;
   budget: number;
+  minimumSalary: number;
   skills: SkillItem[];
   status?: string;
 };

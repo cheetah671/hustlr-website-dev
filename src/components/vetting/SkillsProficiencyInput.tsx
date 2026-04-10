@@ -8,20 +8,15 @@ import { X, Plus, Check } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { FormFieldProp } from "../../lib/schemas/formSchema";
 import { toast } from "sonner";
-
-
-
-// Define your preloaded skills here
-const PREDEFINED_SKILLS = [
-  "Node.js", "React", "TypeScript", "Python", "Docker",
-  "Tailwind CSS", "Next.js", "PostgreSQL", "AWS", "UI/UX Design"
-];
-
-
+import { getSkillsForCategory } from "../../lib/domainSkills";
 
 export function SkillsProficiencyInput({ form }: { form: FormFieldProp }) {
   const skills = form.watch("skills") || [];
+  const category = form.watch("category") || "";
   const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
+
+  // Get skills based on selected category
+  const availableSkills = getSkillsForCategory(category);
 
   const addSkill = () => {
     const currentSkills = form.getValues("skills") || [];
@@ -70,6 +65,15 @@ export function SkillsProficiencyInput({ form }: { form: FormFieldProp }) {
           <FormLabel className="text-lg font-semibold text-gray-900">
             Skills <span className="text-xs font-medium " style={{ color: "#4d9a9a" }}>Add max 10 skills</span>
           </FormLabel>
+          
+          {!category && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700">
+                ℹ️ Please select your category first to see relevant skills for your domain.
+              </p>
+            </div>
+          )}
+
           <FormControl>
             <div className="space-y-3 mt-4">
               {skills.map((skillItem: any, index: number) => (
@@ -84,11 +88,13 @@ export function SkillsProficiencyInput({ form }: { form: FormFieldProp }) {
                         <Button
                           variant="ghost"
                           role="combobox"
+                          disabled={!category}
                           className={cn(
                             "flex items-center justify-between h-9 px-3 rounded-md gap-2 transition-colors",
                             skillItem.skill
                               ? "bg-[#5FB3B3] text-white hover:bg-[#4d9a9a] hover:text-white"
-                              : "bg-transparent text-gray-500"
+                              : "bg-transparent text-gray-500",
+                            !category && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           {skillItem.skill || "Select Skill"}
@@ -98,9 +104,11 @@ export function SkillsProficiencyInput({ form }: { form: FormFieldProp }) {
                         <Command>
                           <CommandInput placeholder="Search skill..." />
                           <CommandList>
-                            <CommandEmpty>No skill found.</CommandEmpty>
+                            <CommandEmpty>
+                              {!category ? "Please select a category first" : "No skill found."}
+                            </CommandEmpty>
                             <CommandGroup>
-                              {PREDEFINED_SKILLS
+                              {availableSkills
                                 .filter((skill) => {
                                   // Hide skills already added in other rows
                                   const selectedSkills = (form.getValues("skills") || [])
@@ -171,7 +179,8 @@ export function SkillsProficiencyInput({ form }: { form: FormFieldProp }) {
                   <Button
                     type="button"
                     onClick={addSkill}
-                    className="bg-accentBlue hover:bg-accentBlue/90 text-white justify-start px-4 py-2.5 rounded-lg h-11 min-w-[240px] font-normal"
+                    disabled={!category}
+                    className="bg-accentBlue hover:bg-accentBlue/90 text-white justify-start px-4 py-2.5 rounded-lg h-11 min-w-[240px] font-normal disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Add Skill ({skills.length}/10)
                   </Button>

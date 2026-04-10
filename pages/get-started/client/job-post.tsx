@@ -28,6 +28,7 @@ import { JOB_POST_DRAFT_STORAGE_KEY } from "@/src/lib/clientTypes";
 import type { SkillLevel, SkillItem, JobPostDraft } from "@/src/lib/clientTypes";
 import { getClientEmailFromSSP } from "@/src/lib/clientAuthUtils";
 import { supabaseAdmin } from "@/src/lib/supabase-admin";
+import { CLIENT_SKILLS_BY_CATEGORY, normalizeSkillText, buildStartsWithFuzzyRegex, doesSkillMatchQuery } from "@/src/lib/domainSkills";
 import { GetServerSideProps } from "next";
 
 const PROJECT_CATEGORIES = [
@@ -42,257 +43,7 @@ function isValidProjectCategory(value: string): value is (typeof PROJECT_CATEGOR
   return PROJECT_CATEGORY_SET.has(value);
 }
 
-const SKILLS_BY_CATEGORY: Record<string, string[]> = {
-  "Web Development": [
-    "React",
-    "Next.js",
-    "Vue.js",
-    "Nuxt.js",
-    "Angular",
-    "Svelte",
-    "SvelteKit",
-    "Node.js",
-    "Express.js",
-    "NestJS",
-    "Django",
-    "Flask",
-    "FastAPI",
-    "Ruby on Rails",
-    "Spring Boot",
-    "ASP.NET",
-    "JavaScript",
-    "TypeScript",
-    "HTML",
-    "CSS",
-    "Python",
-    "Java",
-    "PHP",
-    "C#",
-    "Ruby",
-    "Go",
-    "Tailwind CSS",
-    "Bootstrap",
-    "Material UI",
-    "Styled Components",
-    "Sass / SCSS",
-    "CSS Modules",
-    "Redux",
-    "Zustand",
-    "Recoil",
-    "MobX",
-    "Context API",
-    "REST APIs",
-    "API Development",
-    "API Integration",
-    "GraphQL",
-    "WebSockets",
-    "Authentication",
-    "Authorization",
-    "JWT",
-    "OAuth",
-    "PostgreSQL",
-    "MySQL",
-    "SQLite",
-    "MongoDB",
-    "Firebase Firestore",
-    "Redis",
-    "Deployment",
-    "CI/CD",
-    "Docker",
-    "Kubernetes",
-    "AWS",
-    "Azure",
-    "Google Cloud",
-    "Vercel",
-    "Netlify",
-    "Heroku",
-    "Nginx",
-    "WordPress",
-    "Strapi",
-    "Contentful",
-    "Sanity",
-    "Shopify",
-    "Webflow",
-    "Socket.io",
-    "Realtime Applications",
-    "Push Notifications",
-  ],
-  "Mobile Development": [
-    "Android Development",
-    "iOS Development",
-    "Mobile Development",
-    "Flutter",
-    "React Native",
-    "Ionic",
-    "Kotlin",
-    "Swift",
-    "Xamarin",
-    "Unity",
-    "Expo",
-    "Flutter Widgets",
-    "React Navigation",
-    "Redux",
-    "Zustand",
-    "Dart",
-    "Objective-C",
-    "JavaScript",
-    "TypeScript",
-    "Java",
-    "C#",
-    "Rust",
-    "Android Studio",
-    "Jetpack Compose",
-    "XML Layouts",
-    "Room Database",
-    "LiveData",
-    "ViewModel",
-    "Xcode",
-    "UIKit",
-    "SwiftUI",
-    "Core Data",
-    "Auto Layout",
-    "Firebase",
-    "Supabase",
-    "Backend Development",
-    "REST APIs",
-    "API Integration",
-    "GraphQL",
-    "Authentication",
-    "Authorization",
-    "JWT",
-    "OAuth",
-    "Firebase Firestore",
-    "Realtime Database",
-    "SQLite",
-    "Room Database",
-    "MongoDB",
-    "PostgreSQL",
-    "MySQL",
-    "App Deployment",
-    "CI/CD",
-    "Fastlane",
-    "Google Play Store",
-    "App Store",
-    "TestFlight",
-    "Firebase App Distribution",
-    "Mobile Security",
-    "Data Encryption",
-    "Secure Storage",
-    "Biometric Authentication",
-    "Socket.io",
-    "Realtime Applications",
-    "Chat Systems",
-    "Live Updates",
-    "Push Notifications",
-    "In App Purchases",
-    "Payment Integration",
-    "Offline Storage",
-    "Realtime Sync",
-    "Geolocation",
-    "Maps Integration",
-    "Camera Integration",
-    "File Upload",
-    "Media Handling",
-  ],
-  "AI/ML": [
-    "Python",
-    "R",
-    "Julia",
-    "MATLAB",
-    "Machine Learning",
-    "Deep Learning",
-    "Data Science",
-    "Data Analysis",
-    "Artificial Intelligence",
-    "Natural Language Processing",
-    "Computer Vision",
-    "Time Series Analysis",
-    "Recommender Systems",
-    "Speech Recognition",
-    "Generative AI",
-    "Neural Networks",
-    "CNNs",
-    "RNNs",
-    "Transformers",
-    "Attention Mechanisms",
-    "Backpropagation",
-    "Pandas",
-    "NumPy",
-    "Matplotlib",
-    "Seaborn",
-    "Plotly",
-    "Regression",
-    "Logistic Regression",
-    "Decision Trees",
-    "Random Forest",
-    "XGBoost",
-    "Clustering",
-    "K-Means",
-    "Dimensionality Reduction",
-    "PCA",
-    "Model Evaluation",
-    "Cross Validation",
-    "Accuracy",
-    "Precision",
-    "Recall",
-    "F1 Score",
-    "ROC-AUC",
-    "Model Deployment",
-    "MLOps",
-    "Docker",
-    "Kubernetes",
-    "CI/CD",
-    "API Deployment",
-    "FastAPI",
-    "Flask for ML APIs",
-    "LLMs",
-    "Prompt Engineering",
-    "LangChain",
-    "RAG",
-    "Fine-tuning Models",
-    "Embeddings",
-    "Vector Databases",
-    "SQL",
-    "NoSQL",
-    "MongoDB",
-    "PostgreSQL",
-    "Scikit-learn",
-    "TensorFlow",
-    "PyTorch",
-    "Keras",
-    "LightGBM",
-    "Hugging Face Transformers",
-    "OpenCV",
-    "NLTK",
-    "spaCy",
-  ],
-};
 
-for (const category of Object.keys(SKILLS_BY_CATEGORY)) {
-  SKILLS_BY_CATEGORY[category] = [...new Set(SKILLS_BY_CATEGORY[category])];
-}
-
-function normalizeSkillText(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function buildStartsWithFuzzyRegex(query: string) {
-  const normalized = normalizeSkillText(query);
-  if (!normalized) return null;
-  const pattern = normalized.split("").join(".*");
-  return new RegExp(`^${pattern}`, "i");
-}
-
-function doesSkillMatchQuery(skill: string, query: string) {
-  const normalizedSkill = normalizeSkillText(skill);
-  const normalizedQuery = normalizeSkillText(query);
-
-  if (!normalizedQuery) return true;
-  if (normalizedSkill.includes(normalizedQuery)) return true;
-
-  const startsWithFuzzyRegex = buildStartsWithFuzzyRegex(query);
-  return startsWithFuzzyRegex ? startsWithFuzzyRegex.test(normalizedSkill) : false;
-}
 
 const LEVEL_OPTIONS: SkillLevel[] = ["Required", "Good to have"];
 const TIMELINE_OPTIONS = [
@@ -426,6 +177,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
   const [timelineWeeks, setTimelineWeeks] = useState("0");
   const [deliverables, setDeliverables] = useState("");
   const [budget, setBudget] = useState(20000);
+  const [minimumSalary, setMinimumSalary] = useState<number | null>(null);
   const [openSkillPopovers, setOpenSkillPopovers] = useState<Record<number, boolean>>({});
   const [skillSearchQueries, setSkillSearchQueries] = useState<Record<number, string>>({});
   const [skills, setSkills] = useState<SkillItem[]>([]);
@@ -475,6 +227,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       setTimelineWeeks("0");
       setDeliverables("");
       setBudget(20000);
+      setMinimumSalary(null);
       setSkills([]);
       setOpenSkillPopovers({});
       setSkillSearchQueries({});
@@ -500,6 +253,8 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       setDeliverables(typeof d.deliverables === "string" ? d.deliverables : "");
       const b = typeof d.budget === "number" && Number.isFinite(d.budget) ? d.budget : 0;
       setBudget(Math.max(BUDGET_MIN, b));
+      const ms = typeof d.minimumSalary === "number" && Number.isFinite(d.minimumSalary) ? d.minimumSalary : null;
+      setMinimumSalary(ms !== null && ms >= 0 ? ms : null);
       const { years, months, weeks } = parseTimelineEstimate(
         typeof d.timelineEstimate === "string" ? d.timelineEstimate : "",
       );
@@ -516,6 +271,19 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
     }
 
     async function loadDraft() {
+      let localMinimumSalary: number | null = null;
+      try {
+        const raw = window.localStorage.getItem(JOB_POST_DRAFT_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<JobPostDraft>;
+          if (typeof parsed.minimumSalary === "number" && Number.isFinite(parsed.minimumSalary)) {
+            localMinimumSalary = parsed.minimumSalary;
+          }
+        }
+      } catch {
+        // ignore local draft parse errors
+      }
+
       try {
         const editId = router.query.id;
         const fetchUrl = editId
@@ -525,11 +293,23 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
         if (res.ok) {
           const body = (await res.json()) as { draft: JobPostDraft | null };
           if (!cancelled && body.draft) {
-            applyDraftFromJobPostShape(body.draft);
+            const dbMinimumSalary =
+              typeof body.draft.minimumSalary === "number" && Number.isFinite(body.draft.minimumSalary)
+                ? body.draft.minimumSalary
+                : null;
+            const mergedDraft: JobPostDraft = {
+              ...body.draft,
+              minimumSalary:
+                dbMinimumSalary !== null && dbMinimumSalary > 0
+                  ? dbMinimumSalary
+                  : (localMinimumSalary ?? 0),
+            };
+
+            applyDraftFromJobPostShape(mergedDraft);
             try {
               window.localStorage.setItem(
                 JOB_POST_DRAFT_STORAGE_KEY,
-                JSON.stringify(body.draft),
+                JSON.stringify(mergedDraft),
               );
             } catch {
               // non-critical
@@ -561,6 +341,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
               timelineEstimate: parsed.timelineEstimate,
               deliverables: parsed.deliverables,
               budget: parsed.budget,
+              minimumSalary: typeof parsed.minimumSalary === "number" ? parsed.minimumSalary : 0,
               skills: normalizeJobPostSkills(parsed.skills),
             });
           }
@@ -691,6 +472,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
       timelineEstimate,
       deliverables: deliverables.trim(),
       budget,
+      minimumSalary: minimumSalary ?? 0,
       skills,
       status: draftStatus || undefined,
     };
@@ -932,7 +714,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
                       <div className="space-y-3 mt-4">
                         {skills.map((skillItem, index) => {
                           const query = skillSearchQueries[index] || "";
-                          const available = SKILLS_BY_CATEGORY[category] ?? [];
+                          const available = CLIENT_SKILLS_BY_CATEGORY[category] ?? [];
                           const filtered = available.filter((skill) => doesSkillMatchQuery(skill, query));
 
                           return (
@@ -1170,7 +952,7 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
                             <input
                               type="number"
                               min={BUDGET_MIN}
-                              value={budget || ""}
+                              value={budget !== undefined && budget !== null ? budget : ""}
                               onChange={(e) => {
                                 const raw = e.target.value;
                                 if (raw === "") {
@@ -1183,6 +965,9 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
                               onBlur={(e) => {
                                 const val = parseInt(e.target.value, 10);
                                 if (Number.isNaN(val) || val < BUDGET_MIN) setBudget(BUDGET_MIN);
+                              }}
+                              onWheel={(e) => {
+                                (e.target as HTMLInputElement).blur();
                               }}
                               className="w-full bg-transparent p-0 text-center font-sans text-2xl font-bold text-black outline-none outline-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
@@ -1197,6 +982,40 @@ export default function ClientJobPostPage({ clientEmail }: { clientEmail: string
                             In case of any dissatisfaction with a student&apos;s performance, your money will be fully refunded to you by us.
                           </p>
                         </aside>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="job-post-min-salary" className="block text-2xl font-semibold text-black">Minimum Salary for Candidates</label>
+                      <p className="text-[11px] text-[#7e8f4f]">
+                        Specify the minimum salary you are offering to candidates working on this project.
+                      </p>
+                      <div className="flex items-center rounded-lg border border-black/25 bg-white shadow-sm shadow-black/30 w-full max-w-[300px]">
+                        <span className="px-3 font-sans text-lg font-medium text-black/60">₹</span>
+                        <input
+                          id="job-post-min-salary"
+                          type="number"
+                          min="0"
+                          value={minimumSalary ? minimumSalary : ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                              setMinimumSalary(null);
+                              return;
+                            }
+                            const val = parseInt(raw, 10);
+                            setMinimumSalary(Number.isNaN(val) ? null : Math.max(0, val));
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (Number.isNaN(val) || val < 0) setMinimumSalary(null);
+                          }}
+                          onWheel={(e) => {
+                            (e.target as HTMLInputElement).blur();
+                          }}
+                          placeholder="Enter minimum salary"
+                          className="flex-1 bg-transparent p-3 font-sans text-lg font-semibold text-black outline-none placeholder:text-black/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
                       </div>
                     </div>
 

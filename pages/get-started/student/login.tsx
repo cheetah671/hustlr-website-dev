@@ -12,6 +12,7 @@ import { GetServerSideProps } from "next";
 import { parse } from "cookie";
 import type { JwtPayload } from "jsonwebtoken";
 import { Eye, EyeOff } from "lucide-react";
+import { getStudentEmailRedirectUrl } from "@/src/lib/authRedirect";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
@@ -38,6 +39,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 export default function StudentLoginPage() {
+  type EmailStepVariant = "signup" | "resent" | "existingRateLimited";
+
   const router = useRouter();
   const inFlight = useRef(false);
   const supabaseClientRef = useRef<ReturnType<typeof createClient> | null>(null);
@@ -51,6 +54,7 @@ export default function StudentLoginPage() {
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [step, setStep] = useState<"form" | "emailSent">("form");
+  const [emailStepVariant, setEmailStepVariant] = useState<EmailStepVariant>("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -69,8 +73,30 @@ export default function StudentLoginPage() {
     return null;
   }
 
+  function showEmailStep(variant: EmailStepVariant) {
+    setEmailStepVariant(variant);
+    setStep("emailSent");
+  }
+
+  async function finalizeStudentSignIn(accessToken: string) {
+    const res = await fetch("/api/auth/exchange", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: accessToken }),
+    });
+
+    if (!res.ok) {
+      toast.error("Failed to complete sign in. Please try again.");
+      return false;
+    }
+
+    await router.push("/get-started/student/application");
+    return true;
+  }
+
   async function handleSignIn() {
     const supabaseClient = getSupabaseClient();
+    const emailRedirectTo = getStudentEmailRedirectUrl();
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: email.trim(),
       password,
@@ -86,18 +112,21 @@ export default function StudentLoginPage() {
             type: "signup",
             email: email.trim(),
             options: {
-              emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=/auth/confirmEmail`,
+              emailRedirectTo,
             },
           });
           if (resendError) {
             if (resendError.status === 429) {
-              toast.error("Too many attempts. Please wait a minute and try again.");
+              toast.error(
+                "Your account exists, but verification emails are temporarily rate-limited. Check your inbox or try again in a minute."
+              );
+              showEmailStep("existingRateLimited");
             } else {
               toast.error(resendError.message || "Failed to resend verification email.");
             }
           } else {
             toast.success("Verification email sent! Check your inbox.");
-            setStep("emailSent");
+            showEmailStep("resent");
           }
           break;
         }
@@ -112,39 +141,73 @@ export default function StudentLoginPage() {
       return;
     }
 
-    const res = await fetch("/api/auth/exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: data.session.access_token }),
-    });
-
-    if (res.ok) {
-      void router.push("/get-started/student/application");
-    } else {
-      toast.error("Failed to complete sign in. Please try again.");
-    }
+    await finalizeStudentSignIn(data.session.access_token);
   }
 
   async function handleSignUp() {
     const supabaseClient = getSupabaseClient();
+    const trimmedEmail = email.trim();
+    const emailRedirectTo = getStudentEmailRedirectUrl();
+
+    try {
+      const checkResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      if (checkResponse.ok) {
+        const result = (await checkResponse.json()) as { exists?: boolean };
+        if (result.exists) {
+          toast.error("Email already exists. Please sign in instead.");
+          switchMode("signin");
+          return;
+        }
+      }
+    } catch {
+      // If the pre-check fails, continue with signup and let Supabase decide.
+    }
+
     const { error } = await supabaseClient.auth.signUp({
-      email: email.trim(),
+      email: trimmedEmail,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=/auth/confirmEmail`,
+        emailRedirectTo,
       },
     });
 
     if (error) {
       if (error.status === 429) {
-        toast.error("Too many attempts. Please wait 60 seconds and try again.");
+        const { data: existingAuthData, error: existingAuthError } =
+          await supabaseClient.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          });
+
+        if (existingAuthData.session?.access_token) {
+          toast.success("Account created. Signing you in...");
+          await finalizeStudentSignIn(existingAuthData.session.access_token);
+          return;
+        }
+
+        if (existingAuthError?.code === "email_not_confirmed") {
+          toast.success(
+            "Your account already exists. Check your inbox for the confirmation link."
+          );
+          showEmailStep("existingRateLimited");
+          return;
+        }
+
+        toast.error(
+          "Verification emails are temporarily rate-limited. Please wait a minute and try again."
+        );
       } else {
         toast.error(error.message);
       }
       return;
     }
 
-    setStep("emailSent");
+    showEmailStep("signup");
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -177,6 +240,7 @@ export default function StudentLoginPage() {
   function switchMode(next: "signin" | "signup") {
     setMode(next);
     setStep("form");
+    setEmailStepVariant("signup");
     setPassword("");
     setShowPassword(false);
   }
@@ -191,11 +255,23 @@ export default function StudentLoginPage() {
         <main className="min-h-screen bg-white flex items-center justify-center px-6">
           <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-10 text-center font-sans shadow-md">
             <h1 className="text-2xl font-semibold text-black">Check your inbox</h1>
-            <p className="mt-3 text-sm text-black/65 leading-relaxed">
-              We sent a confirmation link to <strong>{email}</strong>.
-              <br />
-              Click it to verify your account and continue.
-            </p>
+            {emailStepVariant === "existingRateLimited" ? (
+              <p className="mt-3 text-sm text-black/65 leading-relaxed">
+                Your account exists for <strong>{email}</strong>.
+                <br />
+                Check your inbox for the confirmation link. If it has not arrived yet, wait a
+                minute and try signing in again.
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-black/65 leading-relaxed">
+                {emailStepVariant === "resent"
+                  ? "We sent another confirmation link to "
+                  : "We sent a confirmation link to "}
+                <strong>{email}</strong>.
+                <br />
+                Click it to verify your account and continue.
+              </p>
+            )}
             <p className="mt-5 text-xs text-black/45">
               Already confirmed?{" "}
               <button
@@ -215,7 +291,7 @@ export default function StudentLoginPage() {
   return (
     <>
       <Head>
-        <title>{mode === "signin" ? "Sign In" : "Create Account"} – Hustlr</title>
+        <title>{`${mode === "signin" ? "Sign In" : "Create Account"} – Hustlr`}</title>
       </Head>
       <Nav />
       <main className="flex min-h-screen relative bg-[#111] text-foreground">

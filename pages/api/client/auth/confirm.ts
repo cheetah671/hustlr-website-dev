@@ -23,28 +23,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const token_hash = firstString(req.query.token_hash);
+  const code = firstString(req.query.code);
   const type = firstString(req.query.type);
   const next = sanitizeNext(firstString(req.query.next));
 
-  if (!token_hash || !type) {
+  if (!token_hash && !code) {
     return res.redirect("/error?message=Missing_confirmation_parameters");
   }
 
   const supabase = createSupabaseApiClient(req, res);
 
-  const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
-    type: type as EmailOtpType,
-    token_hash,
-  });
+  let access_token: string | undefined;
 
-  if (otpError) {
-    console.error("[client/auth/confirm] verifyOtp error:", otpError);
-    return res.redirect("/error?message=Confirmation_link_expired");
+  if (token_hash && type) {
+    const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
+      type: type as EmailOtpType,
+      token_hash,
+    });
+
+    if (otpError) {
+      console.error("[client/auth/confirm] verifyOtp error:", otpError);
+      return res.redirect("/error?message=Confirmation_link_expired");
+    }
+
+    access_token = otpData?.session?.access_token;
+  } else if (code) {
+    const { data: exchangeData, error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    if (exchangeError) {
+      console.error("[client/auth/confirm] code exchange error:", exchangeError);
+      return res.redirect("/error?message=Confirmation_link_expired");
+    }
+
+    access_token = exchangeData?.session?.access_token;
   }
 
-  const access_token = otpData?.session?.access_token;
   if (!access_token) {
-    console.error("[client/auth/confirm] no access_token after verifyOtp");
+    console.error("[client/auth/confirm] no access_token after confirmation exchange");
     return res.redirect("/error");
   }
 

@@ -371,7 +371,7 @@ export default function ClientProjectPage({
   return (
     <>
       <Head>
-        <title>{projectName} - Hustlr</title>
+        <title>{`${projectName} - Hustlr`}</title>
         <meta
           name="description"
           content={`Student recommendations for ${projectName} on Hustlr.`}

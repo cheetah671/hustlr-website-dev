@@ -19,6 +19,7 @@ import { GetServerSideProps } from "next";
 import { parse } from "cookie";
 import type { JwtPayload } from "jsonwebtoken";
 import { supabaseAdmin } from "@/src/lib/supabase-admin";
+import { getClientEmailRedirectUrl } from "@/src/lib/authRedirect";
 
 const COUNTRY_CODES = [
   { iso: "IN", dialCode: "+91", label: "🇮🇳 +91" },
@@ -156,6 +157,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 export default function ClientVerifyPage() {
+  type EmailStepVariant = "signup" | "resent" | "existingRateLimited";
+
   const router = useRouter();
   const inFlight = useRef(false);
   const supabaseClientRef = useRef<ReturnType<typeof createClient> | null>(null);
@@ -168,6 +171,7 @@ export default function ClientVerifyPage() {
   }
 
   const [step, setStep] = useState<"form" | "emailSent">("form");
+  const [emailStepVariant, setEmailStepVariant] = useState<EmailStepVariant>("signup");
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [countryCode, setCountryCode] = useState("IN");
   const [companyName, setCompanyName] = useState("");
@@ -198,24 +202,106 @@ export default function ClientVerifyPage() {
     return null;
   }
 
+  function showEmailStep(variant: EmailStepVariant) {
+    setEmailStepVariant(variant);
+    setStep("emailSent");
+  }
+
+  async function finalizeClientSignIn(accessToken: string) {
+    const res = await fetch("/api/client/auth/exchange", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: accessToken }),
+    });
+
+    if (res.ok) {
+      toast.success("Signed in successfully!");
+      try {
+        const profileRes = await fetch("/api/client/profile/get");
+        if (profileRes.ok) {
+          await router.push("/get-started/client/dashboard");
+          return true;
+        }
+      } catch {
+        // fall through to onboarding when profile lookup fails
+      }
+      await router.push("/get-started/client/onboarding");
+      return true;
+    }
+
+    if (res.status === 403) {
+      toast.error("Please verify your email before signing in. Check your inbox.");
+      showEmailStep("existingRateLimited");
+      return false;
+    }
+
+    toast.error("Failed to complete sign in. Please try again.");
+    return false;
+  }
+
   async function handleSignUp() {
     const supabaseClient = getSupabaseClient();
     const selectedCode = COUNTRY_CODES.find((c) => c.iso === countryCode);
     const dialCode = selectedCode?.dialCode ?? "+91";
     const fullPhone = `${dialCode}${phone.trim()}`;
+    const trimmedEmail = email.trim();
+    const emailRedirectTo = getClientEmailRedirectUrl();
+
+    try {
+      const checkResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      if (checkResponse.ok) {
+        const result = (await checkResponse.json()) as { exists?: boolean };
+        if (result.exists) {
+          toast.error("Email already exists. Please sign in instead.");
+          setStep("form");
+          setEmailStepVariant("signup");
+          setMode("signin");
+          return;
+        }
+      }
+    } catch {
+      // If the pre-check fails, continue with signup and let Supabase decide.
+    }
 
     const { error } = await supabaseClient.auth.signUp({
-      email: email.trim(),
+      email: trimmedEmail,
       password,
       options: {
         data: { role: "client", companyName: companyName.trim(), phone: fullPhone },
-        emailRedirectTo: `${window.location.origin}/api/client/auth/confirm?next=/get-started/client/dashboard`,
+        emailRedirectTo,
       },
     });
 
     if (error) {
       if (error.status === 429) {
-        toast.error("Too many attempts. Please wait a minute and try again.");
+        const { data: existingAuthData, error: existingAuthError } =
+          await supabaseClient.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          });
+
+        if (existingAuthData.session?.access_token) {
+          toast.success("Account created. Signing you in...");
+          await finalizeClientSignIn(existingAuthData.session.access_token);
+          return;
+        }
+
+        if (existingAuthError?.code === "email_not_confirmed") {
+          toast.success(
+            "Your account already exists. Check your inbox for the confirmation link."
+          );
+          showEmailStep("existingRateLimited");
+          return;
+        }
+
+        toast.error(
+          "Verification emails are temporarily rate-limited. Please wait a minute and try again."
+        );
       } else {
         toast.error(error.message);
       }
@@ -224,11 +310,12 @@ export default function ClientVerifyPage() {
 
     // Always show the email-sent screen regardless of whether Supabase auto-confirmed.
     // If no email arrives the user clicks "Sign in instead" which handles both cases.
-    setStep("emailSent");
+    showEmailStep("signup");
   }
 
   async function handleSignIn() {
     const supabaseClient = getSupabaseClient();
+    const emailRedirectTo = getClientEmailRedirectUrl();
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: email.trim(),
       password,
@@ -245,18 +332,21 @@ export default function ClientVerifyPage() {
             type: "signup",
             email: email.trim(),
             options: {
-              emailRedirectTo: `${window.location.origin}/api/client/auth/confirm?next=/get-started/client/dashboard`,
+              emailRedirectTo,
             },
           });
           if (resendError) {
             if (resendError.status === 429) {
-              toast.error("Too many attempts. Please wait a minute and try again.");
+              toast.error(
+                "Your account exists, but verification emails are temporarily rate-limited. Check your inbox or try again in a minute."
+              );
+              showEmailStep("existingRateLimited");
             } else {
               toast.error(resendError.message || "Failed to resend verification email.");
             }
           } else {
             toast.success("Verification email sent! Check your inbox.");
-            setStep("emailSent");
+            showEmailStep("resent");
           }
           break;
         }
@@ -271,30 +361,7 @@ export default function ClientVerifyPage() {
       return;
     }
 
-    const res = await fetch("/api/client/auth/exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: data.session.access_token }),
-    });
-
-    if (res.ok) {
-      toast.success("Signed in successfully!");
-      try {
-        const profileRes = await fetch("/api/client/profile/get");
-        if (profileRes.ok) {
-          void router.push("/get-started/client/dashboard");
-          return;
-        }
-      } catch {
-        // fall through to onboarding when profile lookup fails
-      }
-      void router.push("/get-started/client/onboarding");
-    } else if (res.status === 403) {
-      toast.error("Please verify your email before signing in. Check your inbox.");
-      setStep("emailSent");
-    } else {
-      toast.error("Failed to complete sign in. Please try again.");
-    }
+    await finalizeClientSignIn(data.session.access_token);
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -334,10 +401,21 @@ export default function ClientVerifyPage() {
         <main className="min-h-screen bg-white flex items-center justify-center px-6">
           <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-10 text-center font-sans shadow-md">
             <h1 className="text-2xl font-semibold text-black">Check your inbox</h1>
-            <p className="mt-3 text-sm text-black/65 leading-relaxed">
-              We sent a confirmation link to <strong>{email}</strong>.
-              Click it to verify your account and get started.
-            </p>
+            {emailStepVariant === "existingRateLimited" ? (
+              <p className="mt-3 text-sm text-black/65 leading-relaxed">
+                Your account exists for <strong>{email}</strong>.
+                Check your inbox for the confirmation link. If it has not arrived yet, wait a
+                minute and try signing in again.
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-black/65 leading-relaxed">
+                {emailStepVariant === "resent"
+                  ? "We sent another confirmation link to "
+                  : "We sent a confirmation link to "}
+                <strong>{email}</strong>.
+                Click it to verify your account and get started.
+              </p>
+            )}
             <p className="mt-4 text-xs text-black/45">
               Already have an account?{" "}
               <button
@@ -345,6 +423,7 @@ export default function ClientVerifyPage() {
                 className="text-black underline underline-offset-4"
                 onClick={() => {
                   setStep("form");
+                  setEmailStepVariant("signup");
                   setMode("signin");
                 }}
               >
@@ -491,7 +570,11 @@ export default function ClientVerifyPage() {
                         type="button"
                         variant="outline"
                         disabled={isSubmitting}
-                        onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                        onClick={() => {
+                          setStep("form");
+                          setEmailStepVariant("signup");
+                          setMode(mode === "signup" ? "signin" : "signup");
+                        }}
                         className="h-10 w-full sm:w-[265px] rounded-2xl border-black/20 bg-white text-black shadow-[-1px_2px_3px_rgba(0,0,0,0.1)] hover:bg-black/5"
                       >
                         {mode === "signup" ? "Sign In Instead" : "Create Account Instead"}

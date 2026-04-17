@@ -29,6 +29,7 @@ export default async function handler(
 
   const queryParams = req.query;
   const token_hash = stringOrFirstString(queryParams.token_hash);
+  const code = stringOrFirstString(queryParams.code);
   const type = stringOrFirstString(queryParams.type);
   let next = sanitizeRedirectPath(stringOrFirstString(queryParams.next), "/error");
 
@@ -60,6 +61,60 @@ export default async function handler(
     // Detect role from Supabase user metadata — clients pass { data: { role: "client" } }
     // in signUp options. The same email template is used for all users so we must
     // determine the right token type and redirect here rather than in a separate endpoint.
+    const userRole = data.user.user_metadata?.role as string | undefined;
+
+    if (userRole === "client") {
+      const clientToken = createClientToken(data.user.email!);
+      res.setHeader(
+        "Set-Cookie",
+        serialize("session", clientToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+          sameSite: "lax",
+        })
+      );
+      return res.redirect("/get-started/client/onboarding");
+    }
+
+    const token = createToken(data.user.email!);
+
+    res.setHeader(
+      "Set-Cookie",
+      serialize("session", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+        sameSite: "lax",
+      })
+    );
+
+    next = sanitizeRedirectPath(stringOrFirstString(queryParams.next), "/");
+  }
+  else if (code) {
+    const supabase = createClient(req, res);
+    const { data: exchangeData, error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    if (exchangeError) {
+      console.error("Email code exchange error:", exchangeError);
+      return res.redirect("/error?message=It_seems_the_link_has_expired!");
+    }
+
+    const access_token = exchangeData?.session?.access_token;
+    if (!access_token) {
+      console.error("No access token returned after exchangeCodeForSession");
+      return res.redirect("/error");
+    }
+
+    const { data, error } = await supabaseAdmin.auth.getUser(access_token);
+    if (error || !data?.user) {
+      console.error("Failed to fetch user after code exchange:", error);
+      return res.redirect("/error");
+    }
+
     const userRole = data.user.user_metadata?.role as string | undefined;
 
     if (userRole === "client") {

@@ -301,17 +301,19 @@ function HackathonReasoning({ reasoning }: { reasoning: string }) {
 /** ── Skills ── Category "X": N matched [A,B] → x/5. Project verification: M confirmed ... → y/5. Total: z/10 */
 function SkillsReasoning({ reasoning }: { reasoning: string }) {
   const catMatch = reasoning.match(
-    /Category "([^"]+)":\s*(\d+)\s*skill\(s\)\s*matched\s*\[([^\]]*)\]\s*→\s*(\d+)\/5/
+    /Category "([^"]+)"(?:\s*resolved\s*as\s*"([^"]+)")?:\s*(\d+)\s*skill\(s\)\s*matched\s*\[([^\]]*)\]\s*(?:→|\?|->)\s*(\d+)\/5/
   );
   const projMatch = reasoning.match(
-    /Project verification:\s*(\d+)\s*skill\(s\)\s*confirmed\s*in\s*top\s*(\d+)\s*project\(s\)\s*\[([^\]]*)\]\s*→\s*(\d+)\/5/
+    /Project verification:\s*(\d+)\s*skill\(s\)\s*confirmed\s*in\s*top\s*(\d+)\s*project\(s\)\s*\[([^\]]*)\]\s*(?:→|\?|->)\s*(\d+)\/5/
   );
   const totalMatch = reasoning.match(/Total:\s*(\d+)\/(\d+)/);
 
   if (!catMatch) return <DefaultReasoning reasoning={reasoning} />;
 
-  const categoryName = catMatch[1];
-  const matchedSkills = catMatch[3] ? catMatch[3].split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const categoryName = catMatch[2]
+    ? `${catMatch[1]} -> ${catMatch[2]}`
+    : catMatch[1];
+  const matchedSkills = catMatch[4] ? catMatch[4].split(",").map((s) => s.trim()).filter(Boolean) : [];
   const verifiedSkills = projMatch && projMatch[3] ? projMatch[3].split(",").map((s) => s.trim()).filter(Boolean) : [];
 
   return (
@@ -323,8 +325,8 @@ function SkillsReasoning({ reasoning }: { reasoning: string }) {
             Category Match
             <span className="font-normal text-gray-400 ml-1">"{categoryName}"</span>
           </span>
-          <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${dimColor(parseInt(catMatch[4]), 5)}`}>
-            {catMatch[4]}/5
+          <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${dimColor(parseInt(catMatch[5]), 5)}`}>
+            {catMatch[5]}/5
           </span>
         </div>
         {matchedSkills.length > 0 ? (
@@ -518,7 +520,7 @@ function ResearchReasoning({ reasoning }: { reasoning: string }) {
     );
   }
 
-  const bestMatch = reasoning.match(/Best:\s*(.+?)\s*→\s*(\d+)\/(\d+)/);
+  const bestMatch = reasoning.match(/Best:\s*(.+?)\s*(?:→|\?|->)\s*(\d+)\/(\d+)/);
   const papersMatch = reasoning.match(/(\d+)\s*paper\(s\)\s*total/);
 
   if (!bestMatch) return <DefaultReasoning reasoning={reasoning} />;
@@ -724,16 +726,16 @@ function FormattedReasoning({
   if (cat === "internships")
     return <InternshipsReasoning reasoning={reasoning} />;
 
-  if (cat === "opensource")
+  if (cat === "open_source" || cat === "opensource")
     return <OpenSourceReasoning reasoning={reasoning} />;
 
   if (cat === "research")
     return <ResearchReasoning reasoning={reasoning} />;
 
-  if (cat === "cpplatform")
+  if (cat === "cp_platform" || cat === "cpplatform")
     return <CpPlatformReasoning reasoning={reasoning} />;
 
-  if (cat === "cpcompetitions")
+  if (cat === "cp_competitions" || cat === "cpcompetitions")
     return <CpCompetitionsReasoning reasoning={reasoning} />;
 
   if (cat === "cgpa")

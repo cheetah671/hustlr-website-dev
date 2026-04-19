@@ -131,8 +131,8 @@ export function ProjectsInput({ form }: { form: FormFieldProp }) {
     if (!projectForm.role) errors.role = "Your role is required";
     if (!projectForm.description.trim()) {
       errors.description = "Description is required";
-    } else if (projectForm.description.trim().split(/\s+/).filter(Boolean).length > 500) {
-      errors.description = "Description should not be more than 500 words";
+    } else if (projectForm.description.trim().split(/\s+/).filter(Boolean).length > 1000) {
+      errors.description = "Description should not be more than 1000 words";
     }
     if (projectForm.techStack.length === 0) errors.techStack = "Add at least one technology";
     if (!projectForm.projectCategory) errors.projectCategory = "Project category is required";
@@ -337,8 +337,8 @@ export function ProjectsInput({ form }: { form: FormFieldProp }) {
                       onChange={(e) => {
                         setProjectForm(prev => ({ ...prev, description: e.target.value }));
                         const wordCount = e.target.value.trim().split(/\s+/).filter(Boolean).length;
-                        if (wordCount > 500) {
-                          setFormErrors(prev => ({ ...prev, description: "Description should not be more than 500 words" }));
+                        if (wordCount > 1000) {
+                          setFormErrors(prev => ({ ...prev, description: "Description should not be more than 1000 words" }));
                         } else {
                           setFormErrors(prev => { const { description, ...rest } = prev; return rest; });
                         }
@@ -350,8 +350,8 @@ export function ProjectsInput({ form }: { form: FormFieldProp }) {
                       className={cn("w-full min-h-[100px] resize-y whitespace-pre-wrap break-words", formErrors.description && "border-red-500")}
                       rows={4}
                     />
-                    <p className={cn("text-xs mt-1 text-right", projectForm.description.trim().split(/\s+/).filter(Boolean).length > 500 ? "text-red-500" : "text-gray-400")}>
-                      {projectForm.description.trim().split(/\s+/).filter(Boolean).length} / 500 words
+                    <p className={cn("text-xs mt-1 text-right", projectForm.description.trim().split(/\s+/).filter(Boolean).length > 1000 ? "text-red-500" : "text-gray-400")}>
+                      {projectForm.description.trim().split(/\s+/).filter(Boolean).length} / 1000 words
                     </p>
                     {formErrors.description && (
                       <p className="text-sm text-red-500 mt-1">{formErrors.description}</p>

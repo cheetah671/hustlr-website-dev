@@ -138,8 +138,8 @@ export function OpenSourceInput({ form }: { form: FormFieldProp }) {
 
     if (!osForm.impactDescription.trim()) {
       errors.impactDescription = "Impact description is required";
-    } else if (osForm.impactDescription.trim().split(/\s+/).filter(Boolean).length > 500) {
-      errors.impactDescription = "Description should not be more than 500 words";
+    } else if (osForm.impactDescription.trim().split(/\s+/).filter(Boolean).length > 1000) {
+      errors.impactDescription = "Description should not be more than 1000 words";
     }
 
     if (!osForm.monthsContributing.trim()) {
@@ -399,8 +399,8 @@ export function OpenSourceInput({ form }: { form: FormFieldProp }) {
                       onChange={(e) => {
                         setField("impactDescription", e.target.value);
                         const wordCount = e.target.value.trim().split(/\s+/).filter(Boolean).length;
-                        if (wordCount > 500) {
-                          setFormErrors(prev => ({ ...prev, impactDescription: "Description should not be more than 500 words" }));
+                        if (wordCount > 1000) {
+                          setFormErrors(prev => ({ ...prev, impactDescription: "Description should not be more than 1000 words" }));
                         } else {
                           setFormErrors(prev => { const { impactDescription, ...rest } = prev; return rest; });
                         }
@@ -411,8 +411,8 @@ export function OpenSourceInput({ form }: { form: FormFieldProp }) {
                       className={cn("w-full min-h-[100px] resize-y whitespace-pre-wrap break-words", formErrors.impactDescription && "border-red-500")}
                       rows={4}
                     />
-                    <p className={cn("text-xs mt-1 text-right", osForm.impactDescription.trim().split(/\s+/).filter(Boolean).length > 500 ? "text-red-500" : "text-gray-400")}>
-                      {osForm.impactDescription.trim().split(/\s+/).filter(Boolean).length} / 500 words
+                    <p className={cn("text-xs mt-1 text-right", osForm.impactDescription.trim().split(/\s+/).filter(Boolean).length > 1000 ? "text-red-500" : "text-gray-400")}>
+                      {osForm.impactDescription.trim().split(/\s+/).filter(Boolean).length} / 1000 words
                     </p>
                     {formErrors.impactDescription && (
                       <p className="text-sm text-red-500 mt-1">{formErrors.impactDescription}</p>

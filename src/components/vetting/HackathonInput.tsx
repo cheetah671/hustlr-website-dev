@@ -112,8 +112,8 @@ export function HackathonInput({ form }: { form: FormFieldProp }) {
     if (!hackathonForm.projectName.trim()) errors.projectName = "Project name is required";
     if (!hackathonForm.description.trim()) {
       errors.description = "Description is required";
-    } else if (hackathonForm.description.trim().split(/\s+/).filter(Boolean).length > 500) {
-      errors.description = "Description should not be more than 500 words";
+    } else if (hackathonForm.description.trim().split(/\s+/).filter(Boolean).length > 1000) {
+      errors.description = "Description should not be more than 1000 words";
     }
     if (!hackathonForm.placement) errors.placement = "Placement is required";
     if (!hackathonForm.type) errors.type = "Hackathon type is required";
@@ -390,8 +390,8 @@ export function HackathonInput({ form }: { form: FormFieldProp }) {
                       onChange={(e) => {
                         setHackathonForm(prev => ({ ...prev, description: e.target.value }));
                         const wordCount = e.target.value.trim().split(/\s+/).filter(Boolean).length;
-                        if (wordCount > 500) {
-                          setFormErrors(prev => ({ ...prev, description: "Description should not be more than 500 words" }));
+                        if (wordCount > 1000) {
+                          setFormErrors(prev => ({ ...prev, description: "Description should not be more than 1000 words" }));
                         } else {
                           setFormErrors(prev => { const { description, ...rest } = prev; return rest; });
                         }
@@ -402,8 +402,8 @@ export function HackathonInput({ form }: { form: FormFieldProp }) {
                       className={cn("w-full min-h-[100px] resize-y whitespace-pre-wrap break-words", formErrors.description && "border-red-500")}
                       rows={4}
                     />
-                    <p className={cn("text-xs mt-1 text-right", hackathonForm.description.trim().split(/\s+/).filter(Boolean).length > 500 ? "text-red-500" : "text-gray-400")}>
-                      {hackathonForm.description.trim().split(/\s+/).filter(Boolean).length} / 500 words
+                    <p className={cn("text-xs mt-1 text-right", hackathonForm.description.trim().split(/\s+/).filter(Boolean).length > 1000 ? "text-red-500" : "text-gray-400")}>
+                      {hackathonForm.description.trim().split(/\s+/).filter(Boolean).length} / 1000 words
                     </p>
                     {formErrors.description && (
                       <p className="text-sm text-red-500 mt-1">{formErrors.description}</p>
